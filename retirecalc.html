@@ -48,7 +48,6 @@
             border-collapse: collapse;
             margin-top: 10px;
         }
-        
         th, td {
             padding: 10px;
             text-align: left;
@@ -304,18 +303,24 @@
 
     function calculateMonthlyExpenses() {
         let totalMonthlyExpenses = 0;
+        let expenses = [];
         for (let i = 0; i < monthlyExpenses.length; i++) {
-            totalMonthlyExpenses += parseFloat(monthlyExpenses[i].value) || 0;
+            let expense = parseFloat(monthlyExpenses[i].value) || 0;
+            totalMonthlyExpenses += expense;
+            expenses.push({ label: monthlyExpenses[i].parentElement.parentElement.previousElementSibling.textContent, value: expense });
         }
-        return totalMonthlyExpenses;
+        return { total: totalMonthlyExpenses, details: expenses };
     }
 
     function calculateYearlyExpenses() {
         let totalYearlyExpenses = 0;
+        let expenses = [];
         for (let i = 0; i < yearlyExpenses.length; i++) {
-            totalYearlyExpenses += parseFloat(yearlyExpenses[i].value) || 0;
+            let expense = parseFloat(yearlyExpenses[i].value) || 0;
+            totalYearlyExpenses += expense;
+            expenses.push({ label: yearlyExpenses[i].parentElement.parentElement.previousElementSibling.textContent, value: expense });
         }
-        return totalYearlyExpenses;
+        return { total: totalYearlyExpenses, details: expenses };
     }
 
     function updateChart() {
@@ -340,14 +345,21 @@
         let taxRateDecimal = taxRate / 100;
         let effectiveMonthlyInterestRate = monthlyInterestRate * (1 - taxRateDecimal);
 
-        let totalMonthlyExpenses = calculateMonthlyExpenses();
-        let totalYearlyExpenses = calculateYearlyExpenses();
+        let monthlyExpenses = calculateMonthlyExpenses();
+        let totalMonthlyExpenses = monthlyExpenses.total;
+        let monthlyExpenseDetails = monthlyExpenses.details;
+        let yearlyExpenses = calculateYearlyExpenses();
+        let totalYearlyExpenses = yearlyExpenses.total;
+        let yearlyExpenseDetails = yearlyExpenses.details;
         let averageMonthlyExpenses = totalMonthlyExpenses + (totalYearlyExpenses / 12);
 
         let yearsRange = [];
         let monthlyWithdrawals = [];
         let fixedIncomes = [];
         let expensesOverTime = [];
+        let totalIncomes = [];
+        let stackedExpenseDetails = monthlyExpenseDetails.map(() => []);
+        let stackedYearlyExpenseDetails = yearlyExpenseDetails.map(() => []);
 
         for (let years = minYears; years <= maxYears; years++) {
             let n = years * 12; // Total number of months
@@ -358,7 +370,9 @@
             let inflatedMonthlyExpenses = averageMonthlyExpenses * Math.pow(1 + inflationRate, years);
 
             let PMT;
-            if (r !== 0) {
+            if (PV === 0) {
+                PMT = 0;
+            } else if (r !== 0) {
                 PMT = PV * r / (1 - Math.pow(1 + r, -n));
             } else {
                 PMT = PV / n;
@@ -370,12 +384,45 @@
             monthlyWithdrawals.push(PMT);
             fixedIncomes.push(fixedMonthlyAmount);
             expensesOverTime.push(inflatedMonthlyExpenses);
+            totalIncomes.push(totalIncome);
+
+            for (let i = 0; i < monthlyExpenseDetails.length; i++) {
+                let inflatedExpense = monthlyExpenseDetails[i].value * Math.pow(1 + inflationRate, years);
+                stackedExpenseDetails[i].push(inflatedExpense);
+            }
+            for (let i = 0; i < yearlyExpenseDetails.length; i++) {
+                let inflatedYearlyExpense = (yearlyExpenseDetails[i].value / 12) * Math.pow(1 + inflationRate, years);
+                stackedYearlyExpenseDetails[i].push(inflatedYearlyExpense);
+            }
         }
 
         // Destroy previous chart if exists
         if (withdrawalChart) {
             withdrawalChart.destroy();
         }
+
+        // Create datasets for expenses
+        let expenseDatasets = monthlyExpenseDetails.map((expense, index) => {
+            return {
+                label: expense.label.trim(),
+                data: stackedExpenseDetails[index],
+                backgroundColor: `rgba(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, 0.6)`,
+                borderColor: `rgba(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, 1)`,
+                borderWidth: 1,
+                stack: 'Expenses'
+            };
+        });
+
+        let yearlyExpenseDatasets = yearlyExpenseDetails.map((expense, index) => {
+            return {
+                label: expense.label.trim(),
+                data: stackedYearlyExpenseDetails[index],
+                backgroundColor: `rgba(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, 0.6)`,
+                borderColor: `rgba(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, 1)`,
+                borderWidth: 1,
+                stack: 'Expenses'
+            };
+        });
 
         // Create new chart
         withdrawalChart = new Chart(ctx, {
@@ -396,14 +443,7 @@
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 1,
                     stack: 'Income'
-                }, {
-                    label: 'Inflated Monthly Expenses (€)',
-                    data: expensesOverTime,
-                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1,
-                    stack: 'Expenses'
-                }]
+                }, ...expenseDatasets, ...yearlyExpenseDatasets]
             },
             options: {
                 responsive: true,
@@ -424,15 +464,12 @@
                         align: 'start',
                         rotation: -90,
                         formatter: function(value, context) {
-                            let label = '';
-                            if (context.datasetIndex === 0) {
-                                label = 'Withdrawal: €' + parseFloat(value).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                            } else if (context.datasetIndex === 1) {
-                                label = 'Fixed Income: €' + parseFloat(value).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                            } else if (context.datasetIndex === 2) {
-                                label = 'Expenses: €' + parseFloat(value).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            if (context.dataset.stack === 'Income') {
+                                return 'Total Income: €' + parseFloat(totalIncomes[context.dataIndex]).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            } else if (context.dataset.stack === 'Expenses' && context.datasetIndex === expenseDatasets.length + yearlyExpenseDatasets.length - 1) {
+                                return 'Total Expense: €' + parseFloat(expensesOverTime[context.dataIndex]).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                             }
-                            return label;
+                            return '';
                         },
                         font: {
                             size: 10,
