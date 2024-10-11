@@ -63,8 +63,8 @@
         <div class="slider-container">
             <div class="slider-label">Starting Capital (€): <span id="startingCapitalDisplay"></span></div>
             <div class="slider-inputs">
-                <input type="range" id="startingCapital" min="150000" max="1000000" step="10000" value="500000">
-                <input type="number" id="startingCapitalNumber" min="150000" max="1000000" step="10000" value="500000">
+                <input type="range" id="startingCapital" min="0" max="5000000" step="10000" value="500000">
+                <input type="number" id="startingCapitalNumber" min="10" max="5000000" step="10000" value="500000">
             </div>
         </div>
 
@@ -464,7 +464,7 @@
                         align: 'start',
                         rotation: -90,
                         formatter: function(value, context) {
-                            if (context.dataset.stack === 'Income') {
+                            if (context.dataset.stack === 'Income' && context.datasetIndex === 1) {
                                 return 'Total Income: €' + parseFloat(totalIncomes[context.dataIndex]).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                             } else if (context.dataset.stack === 'Expenses' && context.datasetIndex === expenseDatasets.length + yearlyExpenseDatasets.length - 1) {
                                 return 'Total Expense: €' + parseFloat(expensesOverTime[context.dataIndex]).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
