@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Monthly Withdrawal Calculator</title>
+    <title>Retirement Expense Calculator</title>
     <!-- Include Chart.js and Data Labels Plugin from CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
@@ -10,6 +10,15 @@
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
+        }
+        .inputs-container {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+        }
+        .sliders-container, .expense-container {
+            flex: 1;
+            margin-right: 20px;
         }
         .slider-container {
             margin-bottom: 20px;
@@ -32,58 +41,161 @@
         #chart-container {
             width: 100%;
             height: 600px;
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        
+        th, td {
+            padding: 10px;
+            text-align: left;
         }
     </style>
 </head>
 <body>
 
-<h1>Monthly Withdrawal Calculator</h1>
+<div class="inputs-container">
+    <div class="sliders-container">
+        <h1>Retirement Expense Calculator</h1>
 
-<div class="slider-container">
-    <div class="slider-label">Starting Capital (€): <span id="startingCapitalDisplay">600,000</span></div>
-    <div class="slider-inputs">
-        <input type="range" id="startingCapital" min="10000" max="1000000" step="10000" value="600000">
-        <input type="number" id="startingCapitalNumber" min="10000" max="1000000" step="10000" value="600000">
+        <div class="slider-container">
+            <div class="slider-label">Starting Capital (€): <span id="startingCapitalDisplay"></span></div>
+            <div class="slider-inputs">
+                <input type="range" id="startingCapital" min="150000" max="1000000" step="10000" value="500000">
+                <input type="number" id="startingCapitalNumber" min="150000" max="1000000" step="10000" value="500000">
+            </div>
+        </div>
+
+        <div class="slider-container">
+            <div class="slider-label">Annual Interest Rate (%): <span id="interestRateDisplay"></span></div>
+            <div class="slider-inputs">
+                <input type="range" id="interestRate" min="0" max="15" step="0.1" value="8">
+                <input type="number" id="interestRateNumber" min="0" max="15" step="0.1" value="8">
+            </div>
+        </div>
+
+        <div class="slider-container">
+            <div class="slider-label">Tax on Capital Gains (%): <span id="taxRateDisplay"></span></div>
+            <div class="slider-inputs">
+                <input type="range" id="taxRate" min="25" max="50" step="0.1" value="25">
+                <input type="number" id="taxRateNumber" min="25" max="50" step="0.1" value="25">
+            </div>
+        </div>
+
+        <div class="slider-container">
+            <div class="slider-label">Fixed Monthly Amount (Rent) (€): <span id="fixedMonthlyAmountDisplay"></span></div>
+            <div class="slider-inputs">
+                <input type="range" id="fixedMonthlyAmount" min="0" max="10000" step="100" value="5000">
+                <input type="number" id="fixedMonthlyAmountNumber" min="0" max="10000" step="100" value="5000">
+            </div>
+        </div>
+
+        <div class="slider-container">
+            <div class="slider-label">Min Years: <span id="minYearsDisplay"></span></div>
+            <div class="slider-inputs">
+                <input type="range" id="minYears" min="1" max="29" step="1" value="15">
+                <input type="number" id="minYearsNumber" min="1" max="29" step="1" value="15">
+            </div>
+        </div>
+
+        <div class="slider-container">
+            <div class="slider-label">Max Years: <span id="maxYearsDisplay"></span></div>
+            <div class="slider-inputs">
+                <input type="range" id="maxYears" min="2" max="30" step="1" value="30">
+                <input type="number" id="maxYearsNumber" min="2" max="30" step="1" value="30">
+            </div>
+        </div>
+
+        <div class="slider-container">
+            <div class="slider-label">Average Inflation Rate (%): <span id="inflationRateDisplay"></span></div>
+            <div class="slider-inputs">
+                <input type="range" id="inflationRate" min="0" max="10" step="0.1" value="3">
+                <input type="number" id="inflationRateNumber" min="0" max="10" step="0.1" value="3">
+            </div>
+        </div>
     </div>
-</div>
 
-<div class="slider-container">
-    <div class="slider-label">Annual Interest Rate (%): <span id="interestRateDisplay">7.0</span></div>
-    <div class="slider-inputs">
-        <input type="range" id="interestRate" min="0" max="15" step="0.1" value="7">
-        <input type="number" id="interestRateNumber" min="0" max="15" step="0.1" value="7">
-    </div>
-</div>
+    <div class="expense-container">
+        <h2>Expected Monthly Expenses (€)</h2>
+        <table id="monthlyExpensesTable">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Amount (€)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Utilities</td>
+                    <td>
+                        <div class="slider-inputs">
+                            <input type="range" class="monthly-expense-range" min="0" max="1000" step="10" value="500">
+                            <input type="number" class="monthly-expense" min="0" max="1000" step="10" value="500">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Food</td>
+                    <td>
+                        <div class="slider-inputs">
+                            <input type="range" class="monthly-expense-range" min="0" max="2000" step="10" value="1000">
+                            <input type="number" class="monthly-expense" min="0" max="2000" step="10" value="1000">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Transportation</td>
+                    <td>
+                        <div class="slider-inputs">
+                            <input type="range" class="monthly-expense-range" min="0" max="1000" step="10" value="150">
+                            <input type="number" class="monthly-expense" min="0" max="1000" step="10" value="150">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Health Insurance</td>
+                    <td>
+                        <div class="slider-inputs">
+                            <input type="range" class="monthly-expense-range" min="0" max="1000" step="10" value="1200">
+                            <input type="number" class="monthly-expense" min="0" max="1000" step="10" value="1200">
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
 
-<div class="slider-container">
-    <div class="slider-label">Tax on Capital Gains (%): <span id="taxRateDisplay">25.0</span></div>
-    <div class="slider-inputs">
-        <input type="range" id="taxRate" min="25" max="50" step="0.1" value="25">
-        <input type="number" id="taxRateNumber" min="25" max="50" step="0.1" value="25">
-    </div>
-</div>
-
-<div class="slider-container">
-    <div class="slider-label">Fixed Monthly Amount (Rent) (€): <span id="fixedMonthlyAmountDisplay">1,000</span></div>
-    <div class="slider-inputs">
-        <input type="range" id="fixedMonthlyAmount" min="0" max="10000" step="100" value="1000">
-        <input type="number" id="fixedMonthlyAmountNumber" min="0" max="10000" step="100" value="1000">
-    </div>
-</div>
-
-<div class="slider-container">
-    <div class="slider-label">Min Years: <span id="minYearsDisplay">10</span></div>
-    <div class="slider-inputs">
-        <input type="range" id="minYears" min="1" max="29" step="1" value="10">
-        <input type="number" id="minYearsNumber" min="1" max="29" step="1" value="10">
-    </div>
-</div>
-
-<div class="slider-container">
-    <div class="slider-label">Max Years: <span id="maxYearsDisplay">20</span></div>
-    <div class="slider-inputs">
-        <input type="range" id="maxYears" min="2" max="30" step="1" value="20">
-        <input type="number" id="maxYearsNumber" min="2" max="30" step="1" value="20">
+        <h2>Expected Yearly Expenses (€)</h2>
+        <table id="yearlyExpensesTable">
+            <thead>
+                <tr>
+                    <th>Category</th>
+                    <th>Amount (€)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Travels</td>
+                    <td>
+                        <div class="slider-inputs">
+                            <input type="range" class="yearly-expense-range" min="0" max="10000" step="100" value="6000">
+                            <input type="number" class="yearly-expense" min="0" max="10000" step="100" value="6000">
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>Repairs</td>
+                    <td>
+                        <div class="slider-inputs">
+                            <input type="range" class="yearly-expense-range" min="0" max="5000" step="100" value="5000">
+                            <input type="number" class="yearly-expense" min="0" max="5000" step="100" value="5000">
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 
@@ -117,12 +229,37 @@
     const maxYearsNumber = document.getElementById('maxYearsNumber');
     const maxYearsDisplay = document.getElementById('maxYearsDisplay');
 
+    const inflationRateInput = document.getElementById('inflationRate');
+    const inflationRateNumber = document.getElementById('inflationRateNumber');
+    const inflationRateDisplay = document.getElementById('inflationRateDisplay');
+
+    // Get references to the expense tables
+    const monthlyExpenseRanges = document.getElementsByClassName('monthly-expense-range');
+    const monthlyExpenses = document.getElementsByClassName('monthly-expense');
+    const yearlyExpenseRanges = document.getElementsByClassName('yearly-expense-range');
+    const yearlyExpenses = document.getElementsByClassName('yearly-expense');
+
     // Synchronize range inputs and number inputs
     function syncInputs(rangeInput, numberInput, display, formatFunction) {
         function updateValues(value) {
             rangeInput.value = value;
             numberInput.value = value;
             display.textContent = formatFunction ? formatFunction(value) : value;
+            updateChart();
+        }
+
+        rangeInput.addEventListener('input', () => {
+            updateValues(rangeInput.value);
+        });
+        numberInput.addEventListener('input', () => {
+            updateValues(numberInput.value);
+        });
+    }
+
+    function syncExpenseInputs(rangeInput, numberInput) {
+        function updateValues(value) {
+            rangeInput.value = value;
+            numberInput.value = value;
             updateChart();
         }
 
@@ -150,16 +287,43 @@
     syncInputs(fixedMonthlyAmountInput, fixedMonthlyAmountNumber, fixedMonthlyAmountDisplay, formatCurrency);
     syncInputs(minYearsInput, minYearsNumber, minYearsDisplay);
     syncInputs(maxYearsInput, maxYearsNumber, maxYearsDisplay);
+    syncInputs(inflationRateInput, inflationRateNumber, inflationRateDisplay, formatPercentage);
+
+    // Synchronize expense inputs
+    for (let i = 0; i < monthlyExpenseRanges.length; i++) {
+        syncExpenseInputs(monthlyExpenseRanges[i], monthlyExpenses[i]);
+    }
+
+    for (let i = 0; i < yearlyExpenseRanges.length; i++) {
+        syncExpenseInputs(yearlyExpenseRanges[i], yearlyExpenses[i]);
+    }
 
     // Initialize chart
     let ctx = document.getElementById('withdrawalChart').getContext('2d');
     let withdrawalChart;
+
+    function calculateMonthlyExpenses() {
+        let totalMonthlyExpenses = 0;
+        for (let i = 0; i < monthlyExpenses.length; i++) {
+            totalMonthlyExpenses += parseFloat(monthlyExpenses[i].value) || 0;
+        }
+        return totalMonthlyExpenses;
+    }
+
+    function calculateYearlyExpenses() {
+        let totalYearlyExpenses = 0;
+        for (let i = 0; i < yearlyExpenses.length; i++) {
+            totalYearlyExpenses += parseFloat(yearlyExpenses[i].value) || 0;
+        }
+        return totalYearlyExpenses;
+    }
 
     function updateChart() {
         let startingCapital = parseFloat(startingCapitalInput.value);
         let annualInterestRate = parseFloat(interestRateInput.value);
         let taxRate = parseFloat(taxRateInput.value);
         let fixedMonthlyAmount = parseFloat(fixedMonthlyAmountInput.value);
+        let inflationRate = parseFloat(inflationRateInput.value) / 100;
         let minYears = parseInt(minYearsInput.value);
         let maxYears = parseInt(maxYearsInput.value);
 
@@ -176,14 +340,22 @@
         let taxRateDecimal = taxRate / 100;
         let effectiveMonthlyInterestRate = monthlyInterestRate * (1 - taxRateDecimal);
 
+        let totalMonthlyExpenses = calculateMonthlyExpenses();
+        let totalYearlyExpenses = calculateYearlyExpenses();
+        let averageMonthlyExpenses = totalMonthlyExpenses + (totalYearlyExpenses / 12);
+
         let yearsRange = [];
         let monthlyWithdrawals = [];
-        let totalIncomes = [];
+        let fixedIncomes = [];
+        let expensesOverTime = [];
 
         for (let years = minYears; years <= maxYears; years++) {
             let n = years * 12; // Total number of months
             let PV = startingCapital;
             let r = effectiveMonthlyInterestRate;
+
+            // Apply inflation to expenses
+            let inflatedMonthlyExpenses = averageMonthlyExpenses * Math.pow(1 + inflationRate, years);
 
             let PMT;
             if (r !== 0) {
@@ -196,7 +368,8 @@
 
             yearsRange.push(years);
             monthlyWithdrawals.push(PMT);
-            totalIncomes.push(totalIncome);
+            fixedIncomes.push(fixedMonthlyAmount);
+            expensesOverTime.push(inflatedMonthlyExpenses);
         }
 
         // Destroy previous chart if exists
@@ -214,13 +387,22 @@
                     data: monthlyWithdrawals,
                     backgroundColor: 'rgba(54, 162, 235, 0.6)',
                     borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1
+                    borderWidth: 1,
+                    stack: 'Income'
                 }, {
-                    label: 'Total Achievable Income (€)',
-                    data: totalIncomes,
+                    label: 'Fixed Income (€)',
+                    data: fixedIncomes,
                     backgroundColor: 'rgba(75, 192, 192, 0.6)',
                     borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
+                    borderWidth: 1,
+                    stack: 'Income'
+                }, {
+                    label: 'Inflated Monthly Expenses (€)',
+                    data: expensesOverTime,
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1,
+                    stack: 'Expenses'
                 }]
             },
             options: {
@@ -242,12 +424,15 @@
                         align: 'start',
                         rotation: -90,
                         formatter: function(value, context) {
+                            let label = '';
                             if (context.datasetIndex === 0) {
-                                let totalIncome = totalIncomes[context.dataIndex];
-                                return 'Withdrawal: €' + parseFloat(value).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + '\nTotal Income: €' + parseFloat(totalIncome).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                            } else {
-                                return '';
+                                label = 'Withdrawal: €' + parseFloat(value).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            } else if (context.datasetIndex === 1) {
+                                label = 'Fixed Income: €' + parseFloat(value).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                            } else if (context.datasetIndex === 2) {
+                                label = 'Expenses: €' + parseFloat(value).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                             }
+                            return label;
                         },
                         font: {
                             size: 10,
@@ -271,7 +456,7 @@
                             display: true,
                             text: 'Amount (€)'
                         },
-                        stacked: false,
+                        stacked: true,
                         ticks: {
                             callback: function(value) {
                                 return '€' + value.toLocaleString('de-DE', { minimumFractionDigits: 0 });
