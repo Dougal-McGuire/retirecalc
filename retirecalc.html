@@ -1,514 +1,522 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Retirement Expense Calculator</title>
-    <!-- Include Chart.js and Data Labels Plugin from CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        .inputs-container {
-            display: flex;
-            flex-direction: row;
-            flex-wrap: wrap;
-        }
-        .sliders-container, .expense-container {
-            flex: 1;
-            margin-right: 20px;
-        }
-        .slider-container {
-            margin-bottom: 20px;
-        }
-        .slider-label {
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .slider-inputs {
-            display: flex;
-            align-items: center;
-        }
-        .slider-inputs input[type="range"] {
-            flex-grow: 1;
-            margin-right: 10px;
-        }
-        .slider-inputs input[type="number"] {
-            width: 100px;
-        }
-        #chart-container {
-            width: 100%;
-            height: 600px;
-            margin-top: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Early Retirement Monte Carlo Simulation</title>
+  <!-- Bootstrap CSS for styling -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      padding: 10px;
+    }
+    .parameter-group {
+      margin-bottom: 0.5rem;
+    }
+    .compact-label {
+      font-size: 0.9rem;
+    }
+    .compact-input {
+      font-size: 0.9rem;
+      padding: 0.25rem;
+      height: auto;
+    }
+    .chart-container {
+      position: relative;
+      height: 500px;
+    }
+    /* Make the sidebar scrollable if content overflows */
+    .parameters-panel {
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+  </style>
 </head>
 <body>
-
-<div class="inputs-container">
-    <div class="sliders-container">
-        <h1>Retirement Expense Calculator</h1>
-
-        <div class="slider-container">
-            <div class="slider-label">Starting Capital (€): <span id="startingCapitalDisplay"></span></div>
-            <div class="slider-inputs">
-                <input type="range" id="startingCapital" min="0" max="5000000" step="10000" value="500000">
-                <input type="number" id="startingCapitalNumber" min="10" max="5000000" step="10000" value="500000">
+  <div class="container-fluid">
+    <h3 class="mb-3">Early Retirement Monte Carlo Simulation</h3>
+    <div class="row">
+      <!-- Compact Parameters Sidebar (3 columns) -->
+      <div class="col-md-3 parameters-panel">
+        <div class="card mb-2">
+          <div class="card-header py-1">
+            <strong>Parameters</strong>
+          </div>
+          <div class="card-body py-2">
+            <!-- Fixed Parameters -->
+            <p class="mb-1"><strong>Fixed</strong></p>
+            <div class="parameter-group">
+              <label class="compact-label" for="currentAge">Current Age:</label>
+              <input type="number" class="form-control compact-input" id="currentAge" value="54" />
             </div>
-        </div>
-
-        <div class="slider-container">
-            <div class="slider-label">Annual Interest Rate (%): <span id="interestRateDisplay"></span></div>
-            <div class="slider-inputs">
-                <input type="range" id="interestRate" min="0" max="15" step="0.1" value="8">
-                <input type="number" id="interestRateNumber" min="0" max="15" step="0.1" value="8">
+            <div class="parameter-group">
+              <label class="compact-label" for="legalRetirementAge">Legal Retirement Age:</label>
+              <input type="number" class="form-control compact-input" id="legalRetirementAge" value="67" />
             </div>
-        </div>
-
-        <div class="slider-container">
-            <div class="slider-label">Tax on Capital Gains (%): <span id="taxRateDisplay"></span></div>
-            <div class="slider-inputs">
-                <input type="range" id="taxRate" min="25" max="50" step="0.1" value="25">
-                <input type="number" id="taxRateNumber" min="25" max="50" step="0.1" value="25">
+            <div class="parameter-group">
+              <label class="compact-label" for="fixedMonthlyPension">Monthly Pension (€):</label>
+              <input type="number" class="form-control compact-input" id="fixedMonthlyPension" value="5000" />
             </div>
-        </div>
-
-        <div class="slider-container">
-            <div class="slider-label">Fixed Monthly Amount (Rent) (€): <span id="fixedMonthlyAmountDisplay"></span></div>
-            <div class="slider-inputs">
-                <input type="range" id="fixedMonthlyAmount" min="0" max="10000" step="100" value="5000">
-                <input type="number" id="fixedMonthlyAmountNumber" min="0" max="10000" step="100" value="5000">
+            <div class="parameter-group">
+              <label class="compact-label" for="currentAssets">Current Assets (€):</label>
+              <input type="number" class="form-control compact-input" id="currentAssets" value="600000" />
             </div>
-        </div>
-
-        <div class="slider-container">
-            <div class="slider-label">Min Years: <span id="minYearsDisplay"></span></div>
-            <div class="slider-inputs">
-                <input type="range" id="minYears" min="1" max="29" step="1" value="15">
-                <input type="number" id="minYearsNumber" min="1" max="29" step="1" value="15">
+            <div class="parameter-group">
+              <label class="compact-label" for="capitalGainsTaxRate">Capital Gains Tax (%):</label>
+              <input type="number" step="0.1" class="form-control compact-input" id="capitalGainsTaxRate" value="26.25" />
             </div>
-        </div>
-
-        <div class="slider-container">
-            <div class="slider-label">Max Years: <span id="maxYearsDisplay"></span></div>
-            <div class="slider-inputs">
-                <input type="range" id="maxYears" min="2" max="30" step="1" value="30">
-                <input type="number" id="maxYearsNumber" min="2" max="30" step="1" value="30">
+            <div class="parameter-group">
+              <label class="compact-label" for="annualSavings">Annual Savings (€):</label>
+              <input type="number" class="form-control compact-input" id="annualSavings" value="18000" />
             </div>
-        </div>
-
-        <div class="slider-container">
-            <div class="slider-label">Average Inflation Rate (%): <span id="inflationRateDisplay"></span></div>
-            <div class="slider-inputs">
-                <input type="range" id="inflationRate" min="0" max="10" step="0.1" value="3">
-                <input type="number" id="inflationRateNumber" min="0" max="10" step="0.1" value="3">
+            <hr class="my-1" />
+            <!-- Variable Parameters -->
+            <p class="mb-1"><strong>Variable</strong></p>
+            <div class="parameter-group">
+              <label class="compact-label" for="retirementAge">
+                Retirement Age (<span id="retirementAgeDisplay">60</span>):
+              </label>
+              <input type="range" class="form-control-range" id="retirementAge" min="55" max="66" value="60" />
             </div>
+            <div class="parameter-group">
+              <label class="compact-label" for="averageROI">
+                Average ROI (%) (<span id="averageROIDisplay">7</span>):
+              </label>
+              <input type="range" class="form-control-range" id="averageROI" min="5" max="11" value="7" />
+            </div>
+            <div class="parameter-group">
+              <label class="compact-label" for="averageInflation">
+                Inflation (%) (<span id="averageInflationDisplay">3</span>):
+              </label>
+              <input type="range" class="form-control-range" id="averageInflation" min="2" max="5" value="3" />
+            </div>
+            <hr class="my-1" />
+            <!-- Volatility Parameters -->
+            <p class="mb-1"><strong>Volatility</strong></p>
+            <div class="parameter-group">
+              <label class="compact-label" for="ROI_volatility">
+                ROI Volatility (e.g., 0.02):
+              </label>
+              <input type="number" step="0.001" class="form-control compact-input" id="ROI_volatility" value="0.02" />
+            </div>
+            <div class="parameter-group">
+              <label class="compact-label" for="inflation_volatility">
+                Inflation Volatility (e.g., 0.005):
+              </label>
+              <input type="number" step="0.001" class="form-control compact-input" id="inflation_volatility" value="0.005" />
+            </div>
+            <hr class="my-1" />
+            <!-- Expenses -->
+            <p class="mb-1"><strong>Monthly Expenses (€)</strong></p>
+            <div class="parameter-group">
+              <label class="compact-label" for="expenseHealth">Health:</label>
+              <input type="number" class="form-control compact-input" id="expenseHealth" value="300" />
+            </div>
+            <div class="parameter-group">
+              <label class="compact-label" for="expenseFood">Food:</label>
+              <input type="number" class="form-control compact-input" id="expenseFood" value="500" />
+            </div>
+            <div class="parameter-group">
+              <label class="compact-label" for="expenseEntertainment">Entertainment:</label>
+              <input type="number" class="form-control compact-input" id="expenseEntertainment" value="200" />
+            </div>
+            <div class="parameter-group">
+              <label class="compact-label" for="expenseShopping">Shopping:</label>
+              <input type="number" class="form-control compact-input" id="expenseShopping" value="100" />
+            </div>
+            <div class="parameter-group">
+              <label class="compact-label" for="expenseUtilities">Utilities:</label>
+              <input type="number" class="form-control compact-input" id="expenseUtilities" value="200" />
+            </div>
+            <p class="mb-1 mt-2"><strong>Annual Expenses (€)</strong></p>
+            <div class="parameter-group">
+              <label class="compact-label" for="expenseVacations">Vacations:</label>
+              <input type="number" class="form-control compact-input" id="expenseVacations" value="3000" />
+            </div>
+            <div class="parameter-group">
+              <label class="compact-label" for="expenseRepairs">Repairs:</label>
+              <input type="number" class="form-control compact-input" id="expenseRepairs" value="2000" />
+            </div>
+            <div class="parameter-group">
+              <label class="compact-label" for="expenseCarMaintenance">Car Maintenance:</label>
+              <input type="number" class="form-control compact-input" id="expenseCarMaintenance" value="1500" />
+            </div>
+            <hr class="my-1" />
+            <!-- Simulation Control -->
+            <div class="parameter-group">
+              <label class="compact-label" for="simulationRuns">Simulations:</label>
+              <input type="number" class="form-control compact-input" id="simulationRuns" value="1000" />
+            </div>
+            <hr class="my-1" />
+            <!-- Save/Load Section -->
+            <p class="mb-1"><strong>Save/Load</strong></p>
+            <textarea id="paramsJSON" class="form-control compact-input" rows="3" placeholder="Parameters JSON"></textarea>
+            <div class="mt-1">
+              <button id="saveParamsBtn" class="btn btn-primary btn-sm">Save</button>
+              <button id="loadParamsBtn" class="btn btn-secondary btn-sm">Load</button>
+            </div>
+          </div>
         </div>
+      </div>
+      <!-- Chart Section (9 columns) -->
+      <div class="col-md-9">
+        <div class="card">
+          <div class="card-header py-1">
+            <strong>Simulation Results</strong>
+          </div>
+          <div class="card-body py-2">
+            <div class="chart-container">
+              <canvas id="simulationChart"></canvas>
+            </div>
+            <hr />
+            <p id="successProbability" class="lead small"></p>
+            <p class="text-muted small">
+              Note: Inflation is applied annually to expenses. For early retirement, assets cover costs until pension begins.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div class="expense-container">
-        <h2>Expected Monthly Expenses (€)</h2>
-        <table id="monthlyExpensesTable">
-            <thead>
-                <tr>
-                    <th>Category</th>
-                    <th>Amount (€)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Utilities</td>
-                    <td>
-                        <div class="slider-inputs">
-                            <input type="range" class="monthly-expense-range" min="0" max="1000" step="10" value="500">
-                            <input type="number" class="monthly-expense" min="0" max="1000" step="10" value="500">
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Food</td>
-                    <td>
-                        <div class="slider-inputs">
-                            <input type="range" class="monthly-expense-range" min="0" max="2000" step="10" value="1000">
-                            <input type="number" class="monthly-expense" min="0" max="2000" step="10" value="1000">
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Transportation</td>
-                    <td>
-                        <div class="slider-inputs">
-                            <input type="range" class="monthly-expense-range" min="0" max="1000" step="10" value="150">
-                            <input type="number" class="monthly-expense" min="0" max="1000" step="10" value="150">
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Health Insurance</td>
-                    <td>
-                        <div class="slider-inputs">
-                            <input type="range" class="monthly-expense-range" min="0" max="1000" step="10" value="1200">
-                            <input type="number" class="monthly-expense" min="0" max="1000" step="10" value="1200">
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+  <script>
+    /*****************************************************************
+     * Utility: Generate a normally distributed random number via
+     * the Box–Muller transform.
+     *****************************************************************/
+    function randomNormal(mean, std) {
+      let u = 0, v = 0;
+      while(u === 0) u = Math.random();
+      while(v === 0) v = Math.random();
+      return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v) * std + mean;
+    }
 
-        <h2>Expected Yearly Expenses (€)</h2>
-        <table id="yearlyExpensesTable">
-            <thead>
-                <tr>
-                    <th>Category</th>
-                    <th>Amount (€)</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Travels</td>
-                    <td>
-                        <div class="slider-inputs">
-                            <input type="range" class="yearly-expense-range" min="0" max="10000" step="100" value="6000">
-                            <input type="number" class="yearly-expense" min="0" max="10000" step="100" value="6000">
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td>Repairs</td>
-                    <td>
-                        <div class="slider-inputs">
-                            <input type="range" class="yearly-expense-range" min="0" max="5000" step="100" value="5000">
-                            <input type="number" class="yearly-expense" min="0" max="5000" step="100" value="5000">
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-</div>
+    /*****************************************************************
+     * Read parameters from the UI.
+     * If volatility fields are empty, use defaults.
+     *****************************************************************/
+    function getParameters() {
+      let roiVol = document.getElementById("ROI_volatility").value;
+      let inflVol = document.getElementById("inflation_volatility").value;
+      return {
+        currentAge: parseInt(document.getElementById("currentAge").value),
+        legalRetirementAge: parseInt(document.getElementById("legalRetirementAge").value),
+        fixedMonthlyPension: parseFloat(document.getElementById("fixedMonthlyPension").value),
+        currentAssets: parseFloat(document.getElementById("currentAssets").value),
+        capitalGainsTaxRate: parseFloat(document.getElementById("capitalGainsTaxRate").value) / 100,
+        annualSavings: parseFloat(document.getElementById("annualSavings").value),
+        intendedRetirementAge: parseInt(document.getElementById("retirementAge").value),
+        averageROI: parseFloat(document.getElementById("averageROI").value) / 100,
+        averageInflation: parseFloat(document.getElementById("averageInflation").value) / 100,
+        ROI_volatility: roiVol === "" ? 0.02 : parseFloat(roiVol),
+        inflation_volatility: inflVol === "" ? 0.005 : parseFloat(inflVol),
+        monthlyExpenses: {
+          health: parseFloat(document.getElementById("expenseHealth").value),
+          food: parseFloat(document.getElementById("expenseFood").value),
+          entertainment: parseFloat(document.getElementById("expenseEntertainment").value),
+          shopping: parseFloat(document.getElementById("expenseShopping").value),
+          utilities: parseFloat(document.getElementById("expenseUtilities").value)
+        },
+        annualExpenses: {
+          vacations: parseFloat(document.getElementById("expenseVacations").value),
+          repairs: parseFloat(document.getElementById("expenseRepairs").value),
+          carMaintenance: parseFloat(document.getElementById("expenseCarMaintenance").value)
+        },
+        simulationRuns: parseInt(document.getElementById("simulationRuns").value),
+        simulationEndAge: 90
+      };
+    }
 
-<div id="chart-container">
-    <canvas id="withdrawalChart"></canvas>
-</div>
+    /*****************************************************************
+     * Update UI elements from a parameters object.
+     *****************************************************************/
+    function loadParametersFromObject(params) {
+      document.getElementById("currentAge").value = params.currentAge;
+      document.getElementById("legalRetirementAge").value = params.legalRetirementAge;
+      document.getElementById("fixedMonthlyPension").value = params.fixedMonthlyPension;
+      document.getElementById("currentAssets").value = params.currentAssets;
+      document.getElementById("capitalGainsTaxRate").value = params.capitalGainsTaxRate * 100;
+      document.getElementById("annualSavings").value = params.annualSavings;
+      document.getElementById("retirementAge").value = params.intendedRetirementAge;
+      document.getElementById("averageROI").value = params.averageROI * 100;
+      document.getElementById("averageInflation").value = params.averageInflation * 100;
+      document.getElementById("ROI_volatility").value = params.ROI_volatility;
+      document.getElementById("inflation_volatility").value = params.inflation_volatility;
+      document.getElementById("expenseHealth").value = params.monthlyExpenses.health;
+      document.getElementById("expenseFood").value = params.monthlyExpenses.food;
+      document.getElementById("expenseEntertainment").value = params.monthlyExpenses.entertainment;
+      document.getElementById("expenseShopping").value = params.monthlyExpenses.shopping;
+      document.getElementById("expenseUtilities").value = params.monthlyExpenses.utilities;
+      document.getElementById("expenseVacations").value = params.annualExpenses.vacations;
+      document.getElementById("expenseRepairs").value = params.annualExpenses.repairs;
+      document.getElementById("expenseCarMaintenance").value = params.annualExpenses.carMaintenance;
+      document.getElementById("simulationRuns").value = params.simulationRuns;
+      document.getElementById("retirementAgeDisplay").innerText = params.intendedRetirementAge;
+      document.getElementById("averageROIDisplay").innerText = (params.averageROI * 100).toFixed(1);
+      document.getElementById("averageInflationDisplay").innerText = (params.averageInflation * 100).toFixed(1);
+    }
 
-<script>
-    // Get references to the inputs and displays
-    const startingCapitalInput = document.getElementById('startingCapital');
-    const startingCapitalNumber = document.getElementById('startingCapitalNumber');
-    const startingCapitalDisplay = document.getElementById('startingCapitalDisplay');
+    /*****************************************************************
+     * Run the Monte Carlo simulation.
+     * Tracks asset values and monthly spending across simulation runs.
+     * In the accumulation phase, monthly spending is set to 0 (so bars display).
+     *****************************************************************/
+    function runSimulation(params) {
+      let ages = [];
+      for (let age = params.currentAge; age <= params.simulationEndAge; age++) {
+        ages.push(age);
+      }
+      let simulations = [];
+      let successCount = 0;
 
-    const interestRateInput = document.getElementById('interestRate');
-    const interestRateNumber = document.getElementById('interestRateNumber');
-    const interestRateDisplay = document.getElementById('interestRateDisplay');
+      for (let i = 0; i < params.simulationRuns; i++) {
+        let assets = [];
+        let spendings = [];
+        let asset = params.currentAssets;
+        let failed = false;
 
-    const taxRateInput = document.getElementById('taxRate');
-    const taxRateNumber = document.getElementById('taxRateNumber');
-    const taxRateDisplay = document.getElementById('taxRateDisplay');
-
-    const fixedMonthlyAmountInput = document.getElementById('fixedMonthlyAmount');
-    const fixedMonthlyAmountNumber = document.getElementById('fixedMonthlyAmountNumber');
-    const fixedMonthlyAmountDisplay = document.getElementById('fixedMonthlyAmountDisplay');
-
-    const minYearsInput = document.getElementById('minYears');
-    const minYearsNumber = document.getElementById('minYearsNumber');
-    const minYearsDisplay = document.getElementById('minYearsDisplay');
-
-    const maxYearsInput = document.getElementById('maxYears');
-    const maxYearsNumber = document.getElementById('maxYearsNumber');
-    const maxYearsDisplay = document.getElementById('maxYearsDisplay');
-
-    const inflationRateInput = document.getElementById('inflationRate');
-    const inflationRateNumber = document.getElementById('inflationRateNumber');
-    const inflationRateDisplay = document.getElementById('inflationRateDisplay');
-
-    // Get references to the expense tables
-    const monthlyExpenseRanges = document.getElementsByClassName('monthly-expense-range');
-    const monthlyExpenses = document.getElementsByClassName('monthly-expense');
-    const yearlyExpenseRanges = document.getElementsByClassName('yearly-expense-range');
-    const yearlyExpenses = document.getElementsByClassName('yearly-expense');
-
-    // Synchronize range inputs and number inputs
-    function syncInputs(rangeInput, numberInput, display, formatFunction) {
-        function updateValues(value) {
-            rangeInput.value = value;
-            numberInput.value = value;
-            display.textContent = formatFunction ? formatFunction(value) : value;
-            updateChart();
+        // Accumulation phase
+        for (let age = params.currentAge; age < params.intendedRetirementAge; age++) {
+          let r = randomNormal(params.averageROI, params.ROI_volatility);
+          let effectiveR = r > 0 ? r * (1 - params.capitalGainsTaxRate) : r;
+          asset = asset * (1 + effectiveR) + params.annualSavings;
+          assets.push(asset);
+          spendings.push(0); // Use 0 so that spending bars display
         }
 
-        rangeInput.addEventListener('input', () => {
-            updateValues(rangeInput.value);
-        });
-        numberInput.addEventListener('input', () => {
-            updateValues(numberInput.value);
-        });
-    }
+        // Distribution phase
+        let baseMonthlyExpenses = params.monthlyExpenses.health + params.monthlyExpenses.food +
+                                  params.monthlyExpenses.entertainment + params.monthlyExpenses.shopping +
+                                  params.monthlyExpenses.utilities;
+        let baseAnnualExpenses = params.annualExpenses.vacations + params.annualExpenses.repairs +
+                                 params.annualExpenses.carMaintenance;
+        let annualExpense = baseMonthlyExpenses * 12 + baseAnnualExpenses;
 
-    function syncExpenseInputs(rangeInput, numberInput) {
-        function updateValues(value) {
-            rangeInput.value = value;
-            numberInput.value = value;
-            updateChart();
+        for (let age = params.intendedRetirementAge; age <= params.simulationEndAge; age++) {
+          let income = (age >= params.legalRetirementAge) ? params.fixedMonthlyPension * 12 : 0;
+          let r = randomNormal(params.averageROI, params.ROI_volatility);
+          let effectiveR = r > 0 ? r * (1 - params.capitalGainsTaxRate) : r;
+          asset = asset * (1 + effectiveR) + income - annualExpense;
+          assets.push(asset);
+          spendings.push(annualExpense / 12);
+          let inflationRate = randomNormal(params.averageInflation, params.inflation_volatility);
+          annualExpense = annualExpense * (1 + inflationRate);
+          if (asset < 0 && !failed) {
+            failed = true;
+          }
         }
+        if (!failed) successCount++;
+        simulations.push({ assets: assets, spendings: spendings });
+      }
 
-        rangeInput.addEventListener('input', () => {
-            updateValues(rangeInput.value);
-        });
-        numberInput.addEventListener('input', () => {
-            updateValues(numberInput.value);
-        });
+      return {
+        ages: ages,
+        simulations: simulations,
+        successProbability: successCount / params.simulationRuns
+      };
     }
 
-    // Format functions
-    function formatCurrency(value) {
-        return parseFloat(value).toLocaleString('de-DE', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    }
+    /*****************************************************************
+     * Calculate percentiles (10th, median, 90th) for a property.
+     *****************************************************************/
+    function calculatePercentilesForProperty(simulationResults, propName) {
+      let numYears = simulationResults.ages.length;
+      let median = [];
+      let p10 = [];
+      let p90 = [];
 
-    function formatPercentage(value) {
-        return parseFloat(value).toFixed(1);
-    }
-
-    // Synchronize inputs
-    syncInputs(startingCapitalInput, startingCapitalNumber, startingCapitalDisplay, formatCurrency);
-    syncInputs(interestRateInput, interestRateNumber, interestRateDisplay, formatPercentage);
-    syncInputs(taxRateInput, taxRateNumber, taxRateDisplay, formatPercentage);
-    syncInputs(fixedMonthlyAmountInput, fixedMonthlyAmountNumber, fixedMonthlyAmountDisplay, formatCurrency);
-    syncInputs(minYearsInput, minYearsNumber, minYearsDisplay);
-    syncInputs(maxYearsInput, maxYearsNumber, maxYearsDisplay);
-    syncInputs(inflationRateInput, inflationRateNumber, inflationRateDisplay, formatPercentage);
-
-    // Synchronize expense inputs
-    for (let i = 0; i < monthlyExpenseRanges.length; i++) {
-        syncExpenseInputs(monthlyExpenseRanges[i], monthlyExpenses[i]);
-    }
-
-    for (let i = 0; i < yearlyExpenseRanges.length; i++) {
-        syncExpenseInputs(yearlyExpenseRanges[i], yearlyExpenses[i]);
-    }
-
-    // Initialize chart
-    let ctx = document.getElementById('withdrawalChart').getContext('2d');
-    let withdrawalChart;
-
-    function calculateMonthlyExpenses() {
-        let totalMonthlyExpenses = 0;
-        let expenses = [];
-        for (let i = 0; i < monthlyExpenses.length; i++) {
-            let expense = parseFloat(monthlyExpenses[i].value) || 0;
-            totalMonthlyExpenses += expense;
-            expenses.push({ label: monthlyExpenses[i].parentElement.parentElement.previousElementSibling.textContent, value: expense });
+      for (let j = 0; j < numYears; j++) {
+        let values = simulationResults.simulations
+                        .map(run => run[propName][j])
+                        .filter(v => v !== null);
+        if (values.length === 0) {
+          median.push(null);
+          p10.push(null);
+          p90.push(null);
+          continue;
         }
-        return { total: totalMonthlyExpenses, details: expenses };
+        values.sort((a, b) => a - b);
+        let mid = Math.floor(values.length / 2);
+        let medVal = (values.length % 2 !== 0) ? values[mid] : (values[mid - 1] + values[mid]) / 2;
+        median.push(medVal);
+        let idx10 = Math.floor(0.1 * values.length);
+        let idx90 = Math.floor(0.9 * values.length);
+        p10.push(values[idx10]);
+        p90.push(values[idx90]);
+      }
+      return { median: median, p10: p10, p90: p90 };
     }
 
-    function calculateYearlyExpenses() {
-        let totalYearlyExpenses = 0;
-        let expenses = [];
-        for (let i = 0; i < yearlyExpenses.length; i++) {
-            let expense = parseFloat(yearlyExpenses[i].value) || 0;
-            totalYearlyExpenses += expense;
-            expenses.push({ label: yearlyExpenses[i].parentElement.parentElement.previousElementSibling.textContent, value: expense });
-        }
-        return { total: totalYearlyExpenses, details: expenses };
-    }
-
-    function updateChart() {
-        let startingCapital = parseFloat(startingCapitalInput.value);
-        let annualInterestRate = parseFloat(interestRateInput.value);
-        let taxRate = parseFloat(taxRateInput.value);
-        let fixedMonthlyAmount = parseFloat(fixedMonthlyAmountInput.value);
-        let inflationRate = parseFloat(inflationRateInput.value) / 100;
-        let minYears = parseInt(minYearsInput.value);
-        let maxYears = parseInt(maxYearsInput.value);
-
-        // Ensure minYears is less than maxYears
-        if (minYears >= maxYears) {
-            maxYears = minYears + 1;
-            maxYearsInput.value = maxYears;
-            maxYearsNumber.value = maxYears;
-            maxYearsDisplay.textContent = maxYears;
-        }
-
-        // Calculate effective monthly interest rate after tax
-        let monthlyInterestRate = (annualInterestRate / 100) / 12;
-        let taxRateDecimal = taxRate / 100;
-        let effectiveMonthlyInterestRate = monthlyInterestRate * (1 - taxRateDecimal);
-
-        let monthlyExpenses = calculateMonthlyExpenses();
-        let totalMonthlyExpenses = monthlyExpenses.total;
-        let monthlyExpenseDetails = monthlyExpenses.details;
-        let yearlyExpenses = calculateYearlyExpenses();
-        let totalYearlyExpenses = yearlyExpenses.total;
-        let yearlyExpenseDetails = yearlyExpenses.details;
-        let averageMonthlyExpenses = totalMonthlyExpenses + (totalYearlyExpenses / 12);
-
-        let yearsRange = [];
-        let monthlyWithdrawals = [];
-        let fixedIncomes = [];
-        let expensesOverTime = [];
-        let totalIncomes = [];
-        let stackedExpenseDetails = monthlyExpenseDetails.map(() => []);
-        let stackedYearlyExpenseDetails = yearlyExpenseDetails.map(() => []);
-
-        for (let years = minYears; years <= maxYears; years++) {
-            let n = years * 12; // Total number of months
-            let PV = startingCapital;
-            let r = effectiveMonthlyInterestRate;
-
-            // Apply inflation to expenses
-            let inflatedMonthlyExpenses = averageMonthlyExpenses * Math.pow(1 + inflationRate, years);
-
-            let PMT;
-            if (PV === 0) {
-                PMT = 0;
-            } else if (r !== 0) {
-                PMT = PV * r / (1 - Math.pow(1 + r, -n));
-            } else {
-                PMT = PV / n;
-            }
-
-            let totalIncome = PMT + fixedMonthlyAmount;
-
-            yearsRange.push(years);
-            monthlyWithdrawals.push(PMT);
-            fixedIncomes.push(fixedMonthlyAmount);
-            expensesOverTime.push(inflatedMonthlyExpenses);
-            totalIncomes.push(totalIncome);
-
-            for (let i = 0; i < monthlyExpenseDetails.length; i++) {
-                let inflatedExpense = monthlyExpenseDetails[i].value * Math.pow(1 + inflationRate, years);
-                stackedExpenseDetails[i].push(inflatedExpense);
-            }
-            for (let i = 0; i < yearlyExpenseDetails.length; i++) {
-                let inflatedYearlyExpense = (yearlyExpenseDetails[i].value / 12) * Math.pow(1 + inflationRate, years);
-                stackedYearlyExpenseDetails[i].push(inflatedYearlyExpense);
-            }
-        }
-
-        // Destroy previous chart if exists
-        if (withdrawalChart) {
-            withdrawalChart.destroy();
-        }
-
-        // Create datasets for expenses
-        let expenseDatasets = monthlyExpenseDetails.map((expense, index) => {
-            return {
-                label: expense.label.trim(),
-                data: stackedExpenseDetails[index],
-                backgroundColor: `rgba(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, 0.6)`,
-                borderColor: `rgba(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, 1)`,
-                borderWidth: 1,
-                stack: 'Expenses'
-            };
-        });
-
-        let yearlyExpenseDatasets = yearlyExpenseDetails.map((expense, index) => {
-            return {
-                label: expense.label.trim(),
-                data: stackedYearlyExpenseDetails[index],
-                backgroundColor: `rgba(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, 0.6)`,
-                borderColor: `rgba(${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, ${Math.floor(Math.random() * 256)}, 1)`,
-                borderWidth: 1,
-                stack: 'Expenses'
-            };
-        });
-
-        // Create new chart
-        withdrawalChart = new Chart(ctx, {
+    /*****************************************************************
+     * Update the combined Chart.js chart.
+     * Assets are shown as lines (left y‑axis), spending as bars (right y‑axis).
+     *****************************************************************/
+    let assetChart;
+    function updateCombinedChart(simulationResults) {
+      let ages = simulationResults.ages;
+      let assetPercentiles = calculatePercentilesForProperty(simulationResults, "assets");
+      let spendingPercentiles = calculatePercentilesForProperty(simulationResults, "spendings");
+      let ctx = document.getElementById("simulationChart").getContext("2d");
+      let data = {
+        labels: ages,
+        datasets: [
+          {
+            label: "Assets 10th Percentile",
+            data: assetPercentiles.p10,
+            borderColor: "red",
+            fill: false,
+            yAxisID: "y-axis-assets"
+          },
+          {
+            label: "Assets Median",
+            data: assetPercentiles.median,
+            borderColor: "blue",
+            fill: false,
+            yAxisID: "y-axis-assets"
+          },
+          {
+            label: "Assets 90th Percentile",
+            data: assetPercentiles.p90,
+            borderColor: "green",
+            fill: false,
+            yAxisID: "y-axis-assets"
+          },
+          {
             type: 'bar',
-            data: {
-                labels: yearsRange,
-                datasets: [{
-                    label: 'Monthly Withdrawal (€)',
-                    data: monthlyWithdrawals,
-                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 1,
-                    stack: 'Income'
-                }, {
-                    label: 'Fixed Income (€)',
-                    data: fixedIncomes,
-                    backgroundColor: 'rgba(75, 192, 192, 0.6)',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1,
-                    stack: 'Income'
-                }, ...expenseDatasets, ...yearlyExpenseDatasets]
+            label: "Spending 10th Percentile",
+            data: spendingPercentiles.p10,
+            backgroundColor: "rgba(255, 159, 64, 0.6)",
+            yAxisID: "y-axis-spending"
+          },
+          {
+            type: 'bar',
+            label: "Spending Median",
+            data: spendingPercentiles.median,
+            backgroundColor: "rgba(153, 102, 255, 0.6)",
+            yAxisID: "y-axis-spending"
+          },
+          {
+            type: 'bar',
+            label: "Spending 90th Percentile",
+            data: spendingPercentiles.p90,
+            backgroundColor: "rgba(201, 203, 207, 0.6)",
+            yAxisID: "y-axis-spending"
+          }
+        ]
+      };
+
+      if (assetChart) {
+        assetChart.data = data;
+        assetChart.update();
+      } else {
+        assetChart = new Chart(ctx, {
+          type: "line",
+          data: data,
+          options: {
+            responsive: true,
+            title: {
+              display: true,
+              text: "Projected Assets & Monthly Spending Over Time"
             },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        display: true
-                    },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                return context.dataset.label + ': €' + parseFloat(context.parsed.y).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                            }
-                        }
-                    },
-                    datalabels: {
-                        color: 'black',
-                        anchor: 'end',
-                        align: 'start',
-                        rotation: -90,
-                        formatter: function(value, context) {
-                            if (context.dataset.stack === 'Income' && context.datasetIndex === 1) {
-                                return 'Total Income: €' + parseFloat(totalIncomes[context.dataIndex]).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                            } else if (context.dataset.stack === 'Expenses' && context.datasetIndex === expenseDatasets.length + yearlyExpenseDatasets.length - 1) {
-                                return 'Total Expense: €' + parseFloat(expensesOverTime[context.dataIndex]).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                            }
-                            return '';
-                        },
-                        font: {
-                            size: 10,
-                            weight: 'bold'
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Years to Withdraw Funds'
-                        },
-                        stacked: true,
-                        ticks: {
-                            precision: 0
-                        }
-                    },
-                    y: {
-                        title: {
-                            display: true,
-                            text: 'Amount (€)'
-                        },
-                        stacked: true,
-                        ticks: {
-                            callback: function(value) {
-                                return '€' + value.toLocaleString('de-DE', { minimumFractionDigits: 0 });
-                            }
-                        }
-                    }
+            scales: {
+              xAxes: [{
+                scaleLabel: { display: true, labelString: "Age" }
+              }],
+              yAxes: [{
+                id: "y-axis-assets",
+                type: "linear",
+                position: "left",
+                scaleLabel: { display: true, labelString: "Asset Value (€)" },
+                ticks: {
+                  callback: function (value) { return "€" + value.toLocaleString(); }
                 }
+              }, {
+                id: "y-axis-spending",
+                type: "linear",
+                position: "right",
+                offset: true,
+                scaleLabel: { display: true, labelString: "Monthly Spending (€)" },
+                ticks: {
+                  callback: function (value) { return "€" + value.toLocaleString(); }
+                },
+                gridLines: { drawOnChartArea: false }
+              }]
             },
-            plugins: [ChartDataLabels]
+            tooltips: {
+              callbacks: {
+                label: function(tooltipItem, data) {
+                  let label = data.datasets[tooltipItem.datasetIndex].label || "";
+                  return label + ": €" + Number(tooltipItem.yLabel).toLocaleString();
+                }
+              }
+            }
+          }
         });
+      }
     }
 
-    // Initial chart update
-    updateChart();
-</script>
+    /*****************************************************************
+     * Update simulation and chart.
+     *****************************************************************/
+    function updateSimulation() {
+      let params = getParameters();
+      document.getElementById("retirementAgeDisplay").innerText = params.intendedRetirementAge;
+      document.getElementById("averageROIDisplay").innerText = (params.averageROI * 100).toFixed(1);
+      document.getElementById("averageInflationDisplay").innerText = (params.averageInflation * 100).toFixed(1);
+      let simulationResults = runSimulation(params);
+      updateCombinedChart(simulationResults);
+      document.getElementById("successProbability").innerText =
+          "Success Probability: " + (simulationResults.successProbability * 100).toFixed(1) + "%";
+    }
 
+    /*****************************************************************
+     * Save parameters to localStorage and update the textarea.
+     *****************************************************************/
+    function saveParameters() {
+      let params = getParameters();
+      let jsonStr = JSON.stringify(params, null, 2);
+      localStorage.setItem("savedParameters", jsonStr);
+      document.getElementById("paramsJSON").value = jsonStr;
+    }
+
+    /*****************************************************************
+     * Load parameters from localStorage and update the UI.
+     *****************************************************************/
+    function loadSavedParameters() {
+      let jsonStr = localStorage.getItem("savedParameters");
+      if (jsonStr) {
+        try {
+          let params = JSON.parse(jsonStr);
+          loadParametersFromObject(params);
+          updateSimulation();
+          document.getElementById("paramsJSON").value = jsonStr;
+        } catch(e) {
+          alert("Stored parameters are invalid.");
+        }
+      } else {
+        alert("No saved parameters found.");
+      }
+    }
+
+    // Event listeners.
+    document.querySelectorAll("input").forEach(el => el.addEventListener("input", updateSimulation));
+    document.getElementById("saveParamsBtn").addEventListener("click", saveParameters);
+    document.getElementById("loadParamsBtn").addEventListener("click", loadSavedParameters);
+
+    // On load, check for stored parameters.
+    window.onload = function() {
+      let stored = localStorage.getItem("savedParameters");
+      if (stored) {
+        try {
+          loadParametersFromObject(JSON.parse(stored));
+        } catch(e) {
+          console.error("Error loading stored parameters:", e);
+        }
+      }
+      updateSimulation();
+    };
+  </script>
 </body>
 </html>

@@ -1,0 +1,61 @@
+**Prompt:**
+
+Create a single-file, web-based Early Retirement Monte Carlo Simulation in one HTML document. The file must include all HTML, embedded CSS, and JavaScript, and reference external libraries via CDNs (Bootstrap for styling and Chart.js for charting).
+
+**Requirements:**
+
+1. **Layout & UI:**
+   - Use a compact, responsive layout that displays both the simulation parameters and the chart on one screen.
+   - Arrange the UI in two main sections:
+     - A left sidebar (approximately 3 Bootstrap columns wide) for all simulation input parameters.
+     - A main content area (approximately 9 Bootstrap columns wide) for the simulation results chart.
+   - Use a compact style for the parameters (smaller fonts and less padding) so that the sidebar remains narrow and scrollable if needed.
+
+2. **Input Parameters:**
+   - **Fixed Parameters (Editable):**
+     - Current Age (number, default 54)
+     - Legal Retirement Age (number, default 67)
+     - Fixed Monthly Pension in Euros (number, default 5000)
+     - Current Assets in Euros (number, default 600000)
+     - Capital Gains Tax Rate (percentage, default 26.25)
+     - Annual Savings (number, default 18000)
+   - **Variable Parameters:**
+     - Intended Retirement Age: a range slider with a range from 55 to 66 (default 60), and a numeric display beside it.
+     - Average ROI (range slider from 5% to 11%, default 7%)
+     - Average Inflation (range slider from 2% to 5%, default 3%)
+   - **Volatility Parameters:**
+     - ROI Volatility: a number field with a default value of 0.02 (representing 2 percentage points)
+     - Inflation Volatility: a number field with a default value of 0.005 (0.5 percentage points)
+     - Ensure that if these fields are empty, the program defaults to 0.02 and 0.005 respectively.
+   - **Expense Categories:**
+     - Monthly Expenses in Euros: Health (300), Food (500), Entertainment (200), Shopping (100), Utilities (200).
+     - Annual Expenses in Euros: Vacations (3000), Repairs (2000), Car Maintenance (1500).
+   - **Simulation Control:**
+     - Number of Simulation Runs (number, default 1000).
+     - The simulation end age should be fixed at 90.
+
+3. **Simulation Logic:**
+   - The simulation must run as a Monte Carlo simulation with two phases:
+     - **Accumulation Phase:** From the current age until the intended retirement age. Each year, apply a randomly generated ROI (using the Box–Muller transform with the provided average ROI and ROI volatility) to the current assets and add annual savings. For this phase, set the monthly spending to 0 (so that spending bars appear as zeros).
+     - **Distribution Phase:** From the intended retirement age until age 90. Each year, subtract the annual expense (calculated as the sum of monthly expenses times 12 plus annual expenses) from the assets. Update the annual expense each year by applying a random inflation rate (using the provided average inflation and inflation volatility). Also, if the age is at or beyond the legal retirement age, add the fixed monthly pension (multiplied by 12) as income. Mark a simulation run as a failure if the asset value drops below zero at any point.
+   - Calculate the 10th, median (50th percentile), and 90th percentiles for asset values and for monthly spending for each simulated year across all runs.
+   - Compute an overall "success probability" as the percentage of runs that never go negative.
+
+4. **Charting & Visualization:**
+   - Use Chart.js to render a combined chart with dual y‑axes:
+     - The x‑axis represents Age (from current age to 90).
+     - The left y‑axis displays asset values (as line charts showing the 10th, median, and 90th percentiles).
+     - The right y‑axis displays monthly spending (as bar charts showing the 10th, median, and 90th percentiles). Make sure this y‑axis appears on the right side (using appropriate Chart.js options such as `position: "right"` and `offset: true`).
+   - Ensure that spending bars are displayed in both the accumulation (as zeros) and distribution phases.
+
+5. **Parameter Persistence:**
+   - Provide “Save” and “Load” buttons along with a text area in the sidebar.
+   - When “Save” is clicked, all current parameters should be gathered into a JSON object, displayed in the text area, and stored in localStorage under a specific key.
+   - When “Load” is clicked, the program should read the parameters from localStorage (or the text area), update the UI input fields, and re-run the simulation.
+   - On page load, if stored parameters are found in localStorage, load them automatically.
+
+6. **General Considerations:**
+   - Include inline comments in the code explaining key sections.
+   - Ensure the code is efficient and responsive (updating the simulation in real time as input parameters change).
+
+Produce the complete HTML file with embedded CSS and JavaScript meeting all the above requirements.
