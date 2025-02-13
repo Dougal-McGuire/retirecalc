@@ -8,6 +8,9 @@
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- jsPDF and html2canvas for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     body {
       padding: 10px;
@@ -38,7 +41,8 @@
   </style>
 </head>
 <body>
-  <div class="container-fluid">
+  <!-- Add an id to the main container so we can capture it -->
+  <div class="container-fluid" id="mainContainer">
     <!-- Header with Language Switcher -->
     <div class="d-flex justify-content-between align-items-center mb-2">
       <h3 data-key="title_main">Early Retirement Monte Carlo Simulation</h3>
@@ -93,7 +97,7 @@
             </div>
             <div class="parameter-group">
               <label class="compact-label" data-key="label_averageROI" for="averageROI"></label>
-              <input type="number" step="0.1" class="form-control compact-input" id="averageROI" value="10" title="" />
+              <input type="number" step="0.1" class="form-control compact-input" id="averageROI" value="7" title="" />
             </div>
             <div class="parameter-group">
               <label class="compact-label" data-key="label_averageInflation" for="averageInflation"></label>
@@ -104,40 +108,40 @@
             <p class="mb-1"><strong data-key="section_volatility">Volatility</strong></p>
             <div class="parameter-group">
               <label class="compact-label" data-key="label_ROI_volatility" for="ROI_volatility"></label>
-              <input type="number" step="0.001" class="form-control compact-input" id="ROI_volatility" value="0.10" title="" />
+              <input type="number" step="0.001" class="form-control compact-input" id="ROI_volatility" value="0.02" title="" />
             </div>
             <div class="parameter-group">
               <label class="compact-label" data-key="label_inflation_volatility" for="inflation_volatility"></label>
-              <input type="number" step="0.001" class="form-control compact-input" id="inflation_volatility" value="0.01" title="" />
+              <input type="number" step="0.001" class="form-control compact-input" id="inflation_volatility" value="0.005" title="" />
             </div>
             <hr class="my-1" />
             <!-- Monthly Expenses -->
             <p class="mb-1"><strong data-key="section_monthlyExpenses">Monthly Expenses (€)</strong></p>
             <div class="parameter-group">
               <label class="compact-label" data-key="label_expenseHealth" for="expenseHealth"></label>
-              <input type="number" class="form-control compact-input" id="expenseHealth" value="1200" title="" />
+              <input type="number" class="form-control compact-input" id="expenseHealth" value="300" title="" />
             </div>
             <div class="parameter-group">
               <label class="compact-label" data-key="label_expenseFood" for="expenseFood"></label>
-              <input type="number" class="form-control compact-input" id="expenseFood" value="1500" title="" />
+              <input type="number" class="form-control compact-input" id="expenseFood" value="500" title="" />
             </div>
             <div class="parameter-group">
               <label class="compact-label" data-key="label_expenseEntertainment" for="expenseEntertainment"></label>
-              <input type="number" class="form-control compact-input" id="expenseEntertainment" value="500" title="" />
+              <input type="number" class="form-control compact-input" id="expenseEntertainment" value="200" title="" />
             </div>
             <div class="parameter-group">
               <label class="compact-label" data-key="label_expenseShopping" for="expenseShopping"></label>
-              <input type="number" class="form-control compact-input" id="expenseShopping" value="500" title="" />
+              <input type="number" class="form-control compact-input" id="expenseShopping" value="100" title="" />
             </div>
             <div class="parameter-group">
               <label class="compact-label" data-key="label_expenseUtilities" for="expenseUtilities"></label>
-              <input type="number" class="form-control compact-input" id="expenseUtilities" value="500" title="" />
+              <input type="number" class="form-control compact-input" id="expenseUtilities" value="200" title="" />
             </div>
             <!-- Annual Expenses -->
             <p class="mb-1 mt-2"><strong data-key="section_annualExpenses">Annual Expenses (€)</strong></p>
             <div class="parameter-group">
               <label class="compact-label" data-key="label_expenseVacations" for="expenseVacations"></label>
-              <input type="number" class="form-control compact-input" id="expenseVacations" value="12000" title="" />
+              <input type="number" class="form-control compact-input" id="expenseVacations" value="3000" title="" />
             </div>
             <div class="parameter-group">
               <label class="compact-label" data-key="label_expenseRepairs" for="expenseRepairs"></label>
@@ -151,7 +155,7 @@
             <!-- Simulation Control -->
             <div class="parameter-group">
               <label class="compact-label" data-key="label_simulationRuns" for="simulationRuns"></label>
-              <input type="number" class="form-control compact-input" id="simulationRuns" value="10000" title="" />
+              <input type="number" class="form-control compact-input" id="simulationRuns" value="1000" title="" />
             </div>
             <hr class="my-1" />
             <!-- Save/Load Section -->
@@ -160,6 +164,10 @@
             <div class="mt-1">
               <button id="saveParamsBtn" class="btn btn-primary btn-sm" data-key="btn_save">Save</button>
               <button id="loadParamsBtn" class="btn btn-secondary btn-sm" data-key="btn_load">Load</button>
+            </div>
+            <!-- Export PDF Button -->
+            <div class="mt-1">
+              <button id="exportPdfBtn" class="btn btn-success btn-sm" data-key="btn_exportPdf">Export PDF</button>
             </div>
           </div>
         </div>
@@ -251,6 +259,7 @@
         tooltip_saveLoad: "Save or load your simulation parameters.",
         btn_save: "Save",
         btn_load: "Load",
+        btn_exportPdf: "Export PDF",
         section_results: "Simulation Results",
         successProbability: "Success Probability",
         explanation_simulation: "Simulation Explanation: The simulation has two phases. In the accumulation phase (from your current age until your intended retirement), your assets grow with savings and investment returns. In the distribution phase (from retirement until age 90), your assets cover your living expenses—which increase with inflation—until your pension begins at the legal retirement age. The success probability shows the percentage of simulations in which your assets never drop below zero."
@@ -308,6 +317,7 @@
         tooltip_saveLoad: "Speichern oder Laden Ihrer Simulationsparameter.",
         btn_save: "Speichern",
         btn_load: "Laden",
+        btn_exportPdf: "PDF exportieren",
         section_results: "Simulationsergebnisse",
         successProbability: "Erfolgswahrscheinlichkeit",
         explanation_simulation: "Simulations-Erklärung: Die Simulation modelliert zwei Phasen. In der Ansparphase (von Ihrem aktuellen Alter bis zum geplanten Rentenalter) wachsen Ihre Vermögenswerte durch Ersparnisse und Renditen. In der Auszahlungsphase (vom Rentenbeginn bis zum Alter 90) decken Ihre Vermögenswerte Ihre Lebenshaltungskosten – die durch Inflation steigen – bis Ihre Rente einsetzt. Die Erfolgswahrscheinlichkeit gibt den Prozentsatz der Simulationen an, bei denen Ihre Vermögenswerte nie unter null fallen."
@@ -565,7 +575,7 @@
               }, {
                 id: "y-axis-spending",
                 type: "linear",
-                position: "right", // Ensures spending axis is on the right side
+                position: "right", // spending axis on the right
                 scaleLabel: { display: true, labelString: "Monthly Spending (€)" },
                 ticks: {
                   callback: function (value) { return "€" + value.toLocaleString(); }
@@ -620,10 +630,29 @@
       }
     }
 
+    // Export PDF: Capture the main container and save to PDF with current date in filename
+    function exportPdf() {
+      html2canvas(document.getElementById("mainContainer")).then(function(canvas) {
+        let imgData = canvas.toDataURL('image/png');
+        const { jsPDF } = window.jspdf;
+        let pdf = new jsPDF('p', 'pt', 'a4');
+        let imgWidth = 595.28; // A4 width in pt
+        let pageHeight = 841.89; // A4 height in pt
+        let canvasWidth = canvas.width;
+        let canvasHeight = canvas.height;
+        let imgHeight = canvasHeight * imgWidth / canvasWidth;
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+        const date = new Date();
+        let filename = "retirecalc_" + date.getFullYear() + "-" + String(date.getMonth()+1).padStart(2, '0') + "-" + String(date.getDate()).padStart(2, '0') + ".pdf";
+        pdf.save(filename);
+      });
+    }
+
     // Set event listeners
     document.querySelectorAll("input").forEach(el => el.addEventListener("input", updateSimulation));
     document.getElementById("saveParamsBtn").addEventListener("click", saveParameters);
     document.getElementById("loadParamsBtn").addEventListener("click", loadSavedParameters);
+    document.getElementById("exportPdfBtn").addEventListener("click", exportPdf);
 
     // On window load: load stored parameters (if any), update language, and run simulation.
     window.onload = function() {
