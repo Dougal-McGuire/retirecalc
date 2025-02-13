@@ -642,7 +642,7 @@
       html2canvas(document.getElementById("mainContainer")).then(function(canvas) {
         let imgData = canvas.toDataURL('image/png');
         const { jsPDF } = window.jspdf;
-        let pdf = new jsPDF('p', 'pt', 'a4');
+        let pdf = new jsPDF('l', 'pt', 'a4');
         let imgWidth = 595.28; // A4 width in pt
         let pageHeight = 841.89; // A4 height in pt
         let canvasWidth = canvas.width;
