@@ -643,8 +643,8 @@
         let imgData = canvas.toDataURL('image/png');
         const { jsPDF } = window.jspdf;
         let pdf = new jsPDF('l', 'pt', 'a4');
-        let imgWidth = 595.28; // A4 width in pt
-        let pageHeight = 841.89; // A4 height in pt
+        let imgWidth = 841.89; // A4 width in pt
+        let pageHeight =  595.28; // A4 height in pt
         let canvasWidth = canvas.width;
         let canvasHeight = canvas.height;
         let imgHeight = canvasHeight * imgWidth / canvasWidth;
