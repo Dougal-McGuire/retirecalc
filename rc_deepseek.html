@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Early Retirement Monte Carlo Simulation</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-size: 14px;
+    }
+    .sidebar {
+      height: 100vh;
+      overflow-y: auto;
+    }
+    .form-control-sm {
+      font-size: 12px;
+    }
+    .chart-container {
+      height: 80vh;
+    }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Sidebar for Input Parameters -->
+      <div class="col-3 sidebar bg-light p-3">
+        <h5>Simulation Parameters</h5>
+        <form id="simulationParams">
+          <!-- Fixed Parameters -->
+          <div class="mb-3">
+            <label for="currentAge" class="form-label">Current Age</label>
+            <input type="number" class="form-control form-control-sm" id="currentAge" value="54">
+          </div>
+          <div class="mb-3">
+            <label for="retirementAge" class="form-label">Legal Retirement Age</label>
+            <input type="number" class="form-control form-control-sm" id="retirementAge" value="67">
+          </div>
+          <div class="mb-3">
+            <label for="pension" class="form-label">Fixed Monthly Pension (€)</label>
+            <input type="number" class="form-control form-control-sm" id="pension" value="5000">
+          </div>
+          <div class="mb-3">
+            <label for="currentAssets" class="form-label">Current Assets (€)</label>
+            <input type="number" class="form-control form-control-sm" id="currentAssets" value="600000">
+          </div>
+          <div class="mb-3">
+            <label for="taxRate" class="form-label">Capital Gains Tax Rate (%)</label>
+            <input type="number" class="form-control form-control-sm" id="taxRate" value="26.25">
+          </div>
+          <div class="mb-3">
+            <label for="annualSavings" class="form-label">Annual Savings (€)</label>
+            <input type="number" class="form-control form-control-sm" id="annualSavings" value="18000">
+          </div>
+
+          <!-- Variable Parameters -->
+          <div class="mb-3">
+            <label for="intendedRetirementAge" class="form-label">Intended Retirement Age</label>
+            <input type="range" class="form-range" id="intendedRetirementAge" min="55" max="66" value="60">
+            <span id="intendedRetirementAgeValue">60</span>
+          </div>
+          <div class="mb-3">
+            <label for="roi" class="form-label">Average ROI (%)</label>
+            <input type="range" class="form-range" id="roi" min="5" max="11" value="7">
+            <span id="roiValue">7</span>
+          </div>
+          <div class="mb-3">
+            <label for="inflation" class="form-label">Average Inflation (%)</label>
+            <input type="range" class="form-range" id="inflation" min="2" max="5" value="3">
+            <span id="inflationValue">3</span>
+          </div>
+
+          <!-- Volatility Parameters -->
+          <div class="mb-3">
+            <label for="roiVolatility" class="form-label">ROI Volatility</label>
+            <input type="number" class="form-control form-control-sm" id="roiVolatility" value="0.02">
+          </div>
+          <div class="mb-3">
+            <label for="inflationVolatility" class="form-label">Inflation Volatility</label>
+            <input type="number" class="form-control form-control-sm" id="inflationVolatility" value="0.005">
+          </div>
+
+          <!-- Expense Categories -->
+          <h6>Monthly Expenses (€)</h6>
+          <div class="mb-3">
+            <label for="healthExpense" class="form-label">Health</label>
+            <input type="number" class="form-control form-control-sm" id="healthExpense" value="300">
+          </div>
+          <div class="mb-3">
+            <label for="foodExpense" class="form-label">Food</label>
+            <input type="number" class="form-control form-control-sm" id="foodExpense" value="500">
+          </div>
+          <div class="mb-3">
+            <label for="entertainmentExpense" class="form-label">Entertainment</label>
+            <input type="number" class="form-control form-control-sm" id="entertainmentExpense" value="200">
+          </div>
+          <div class="mb-3">
+            <label for="shoppingExpense" class="form-label">Shopping</label>
+            <input type="number" class="form-control form-control-sm" id="shoppingExpense" value="100">
+          </div>
+          <div class="mb-3">
+            <label for="utilitiesExpense" class="form-label">Utilities</label>
+            <input type="number" class="form-control form-control-sm" id="utilitiesExpense" value="200">
+          </div>
+
+          <h6>Annual Expenses (€)</h6>
+          <div class="mb-3">
+            <label for="vacationExpense" class="form-label">Vacations</label>
+            <input type="number" class="form-control form-control-sm" id="vacationExpense" value="3000">
+          </div>
+          <div class="mb-3">
+            <label for="repairsExpense" class="form-label">Repairs</label>
+            <input type="number" class="form-control form-control-sm" id="repairsExpense" value="2000">
+          </div>
+          <div class="mb-3">
+            <label for="carMaintenanceExpense" class="form-label">Car Maintenance</label>
+            <input type="number" class="form-control form-control-sm" id="carMaintenanceExpense" value="1500">
+          </div>
+
+          <!-- Simulation Control -->
+          <div class="mb-3">
+            <label for="simulationRuns" class="form-label">Number of Simulation Runs</label>
+            <input type="number" class="form-control form-control-sm" id="simulationRuns" value="1000">
+          </div>
+        </form>
+
+        <!-- Save and Load Buttons -->
+        <div class="mb-3">
+          <button class="btn btn-sm btn-primary" onclick="saveParameters()">Save</button>
+          <button class="btn btn-sm btn-secondary" onclick="loadParameters()">Load</button>
+        </div>
+        <textarea id="parameterStorage" class="form-control form-control-sm" rows="5"></textarea>
+      </div>
+
+      <!-- Main Content Area for Chart -->
+      <div class="col-9 p-3">
+        <h5>Simulation Results</h5>
+        <div class="chart-container">
+          <canvas id="simulationChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Chart.js
+    const ctx = document.getElementById('simulationChart').getContext('2d');
+    let simulationChart;
+
+    // Function to generate random ROI using Box-Muller transform
+    function getRandomROI(mean, volatility) {
+      let u = 0, v = 0;
+      while (u === 0) u = Math.random(); // Converting [0,1) to (0,1)
+      while (v === 0) v = Math.random();
+      const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+      return mean + z * volatility;
+    }
+
+    // Function to calculate annual expenses
+    function calculateAnnualExpenses(monthlyExpenses, annualExpenses) {
+      return monthlyExpenses.reduce((a, b) => a + b, 0) * 12 + annualExpenses.reduce((a, b) => a + b, 0);
+    }
+
+    // Function to run the Monte Carlo simulation
+    function runSimulation() {
+      const currentAge = parseInt(document.getElementById('currentAge').value);
+      const retirementAge = parseInt(document.getElementById('retirementAge').value);
+      const intendedRetirementAge = parseInt(document.getElementById('intendedRetirementAge').value);
+      const pension = parseFloat(document.getElementById('pension').value);
+      const currentAssets = parseFloat(document.getElementById('currentAssets').value);
+      const taxRate = parseFloat(document.getElementById('taxRate').value) / 100;
+      const annualSavings = parseFloat(document.getElementById('annualSavings').value);
+      const roi = parseFloat(document.getElementById('roi').value) / 100;
+      const inflation = parseFloat(document.getElementById('inflation').value) / 100;
+      const roiVolatility = parseFloat(document.getElementById('roiVolatility').value) || 0.02;
+      const inflationVolatility = parseFloat(document.getElementById('inflationVolatility').value) || 0.005;
+      const simulationRuns = parseInt(document.getElementById('simulationRuns').value);
+
+      const monthlyExpenses = [
+        parseFloat(document.getElementById('healthExpense').value),
+        parseFloat(document.getElementById('foodExpense').value),
+        parseFloat(document.getElementById('entertainmentExpense').value),
+        parseFloat(document.getElementById('shoppingExpense').value),
+        parseFloat(document.getElementById('utilitiesExpense').value)
+      ];
+      const annualExpenses = [
+        parseFloat(document.getElementById('vacationExpense').value),
+        parseFloat(document.getElementById('repairsExpense').value),
+        parseFloat(document.getElementById('carMaintenanceExpense').value)
+      ];
+
+      const results = [];
+      let successCount = 0;
+
+      for (let run = 0; run < simulationRuns; run++) {
+        let assets = currentAssets;
+        let annualExpense = calculateAnnualExpenses(monthlyExpenses, annualExpenses);
+        let failed = false;
+        const runResults = [];
+
+        for (let age = currentAge; age <= 90; age++) {
+          if (age < intendedRetirementAge) {
+            // Accumulation Phase
+            const randomROI = getRandomROI(roi, roiVolatility);
+            assets *= (1 + randomROI);
+            assets += annualSavings;
+            runResults.push({ age, assets, spending: 0 });
+          } else {
+            // Distribution Phase
+            const randomInflation = getRandomROI(inflation, inflationVolatility);
+            annualExpense *= (1 + randomInflation);
+            assets -= annualExpense;
+            if (age >= retirementAge) {
+              assets += pension * 12;
+            }
+            runResults.push({ age, assets, spending: annualExpense / 12 });
+            if (assets < 0) {
+              failed = true;
+            }
+          }
+        }
+
+        results.push(runResults);
+        if (!failed) successCount++;
+      }
+
+      // Calculate percentiles
+      const percentiles = [10, 50, 90];
+      const percentileResults = percentiles.map(p => {
+        return Array.from({ length: 91 - currentAge }, (_, i) => {
+          const values = results.map(run => run[i].assets);
+          values.sort((a, b) => a - b);
+          return values[Math.floor(values.length * (p / 100))];
+        });
+      });
+
+      const spendingPercentiles = percentiles.map(p => {
+        return Array.from({ length: 91 - currentAge }, (_, i) => {
+          const values = results.map(run => run[i].spending);
+          values.sort((a, b) => a - b);
+          return values[Math.floor(values.length * (p / 100))];
+        });
+      });
+
+      // Update Chart
+      const ages = Array.from({ length: 91 - currentAge }, (_, i) => currentAge + i);
+      if (simulationChart) simulationChart.destroy();
+      simulationChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: ages,
+          datasets: [
+            {
+              label: '10th Percentile Assets',
+              data: percentileResults[0],
+              borderColor: 'rgba(75, 192, 192, 0.5)',
+              fill: false,
+              yAxisID: 'assets'
+            },
+            {
+              label: 'Median Assets',
+              data: percentileResults[1],
+              borderColor: 'rgba(75, 192, 192, 1)',
+              fill: false,
+              yAxisID: 'assets'
+            },
+            {
+              label: '90th Percentile Assets',
+              data: percentileResults[2],
+              borderColor: 'rgba(75, 192, 192, 0.2)',
+              fill: false,
+              yAxisID: 'assets'
+            },
+            {
+              label: '10th Percentile Spending',
+              data: spendingPercentiles[0],
+              type: 'bar',
+              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+              yAxisID: 'spending'
+            },
+            {
+              label: 'Median Spending',
+              data: spendingPercentiles[1],
+              type: 'bar',
+              backgroundColor: 'rgba(255, 99, 132, 0.5)',
+              yAxisID: 'spending'
+            },
+            {
+              label: '90th Percentile Spending',
+              data: spendingPercentiles[2],
+              type: 'bar',
+              backgroundColor: 'rgba(255, 99, 132, 0.8)',
+              yAxisID: 'spending'
+            }
+          ]
+        },
+        options: {
+          scales: {
+            assets: {
+              type: 'linear',
+              position: 'left',
+              title: { display: true, text: 'Assets (€)' }
+            },
+            spending: {
+              type: 'linear',
+              position: 'right',
+              title: { display: true, text: 'Monthly Spending (€)' },
+              offset: true
+            }
+          }
+        }
+      });
+
+      // Display success probability
+      const successProbability = (successCount / simulationRuns * 100).toFixed(2);
+      console.log(`Success Probability: ${successProbability}%`);
+    }
+
+    // Save and Load Functions
+    function saveParameters() {
+      const params = {};
+      document.querySelectorAll('#simulationParams input').forEach(input => {
+        params[input.id] = input.value;
+      });
+      const json = JSON.stringify(params, null, 2);
+      document.getElementById('parameterStorage').value = json;
+      localStorage.setItem('retirementSimulationParams', json);
+    }
+
+    function loadParameters() {
+      const json = localStorage.getItem('retirementSimulationParams') || document.getElementById('parameterStorage').value;
+      if (json) {
+        const params = JSON.parse(json);
+        Object.keys(params).forEach(key => {
+          const input = document.getElementById(key);
+          if (input) input.value = params[key];
+        });
+        runSimulation();
+      }
+    }
+
+    // Event Listeners
+    document.querySelectorAll('#simulationParams input').forEach(input => {
+      input.addEventListener('input', runSimulation);
+    });
+
+    // Initial Load
+    window.onload = () => {
+      loadParameters();
+      runSimulation();
+    };
+  </script>
+</body>
+</html>

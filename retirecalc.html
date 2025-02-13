@@ -4,9 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Early Retirement Monte Carlo Simulation</title>
-  <!-- Bootstrap CSS for styling -->
+  <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
-  <!-- Chart.js for data visualization -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
@@ -27,135 +27,139 @@
       position: relative;
       height: 500px;
     }
-    /* Make the sidebar scrollable if content overflows */
     .parameters-panel {
       max-height: 90vh;
       overflow-y: auto;
+    }
+    .language-switch {
+      float: right;
+      margin-top: 5px;
     }
   </style>
 </head>
 <body>
   <div class="container-fluid">
-    <h3 class="mb-3">Early Retirement Monte Carlo Simulation</h3>
+    <!-- Header with Language Switcher -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h3 data-key="title_main">Early Retirement Monte Carlo Simulation</h3>
+      <div class="language-switch">
+        <label for="languageSelect" data-key="languageLabel">Language</label>
+        <select id="languageSelect" class="form-control form-control-sm" style="width: auto;">
+          <option value="en">English</option>
+          <option value="de">Deutsch</option>
+        </select>
+      </div>
+    </div>
     <div class="row">
-      <!-- Compact Parameters Sidebar (3 columns) -->
+      <!-- Parameters Sidebar (3 columns) -->
       <div class="col-md-3 parameters-panel">
         <div class="card mb-2">
           <div class="card-header py-1">
-            <strong>Parameters</strong>
+            <strong data-key="section_parameters">Parameters</strong>
           </div>
           <div class="card-body py-2">
             <!-- Fixed Parameters -->
-            <p class="mb-1"><strong>Fixed</strong></p>
+            <p class="mb-1"><strong data-key="section_fixed">Fixed</strong></p>
             <div class="parameter-group">
-              <label class="compact-label" for="currentAge">Current Age:</label>
-              <input type="number" class="form-control compact-input" id="currentAge" value="54" />
+              <label class="compact-label" data-key="label_currentAge" for="currentAge"></label>
+              <input type="number" class="form-control compact-input" id="currentAge" value="54" title="" />
             </div>
             <div class="parameter-group">
-              <label class="compact-label" for="legalRetirementAge">Legal Retirement Age:</label>
-              <input type="number" class="form-control compact-input" id="legalRetirementAge" value="67" />
+              <label class="compact-label" data-key="label_legalRetirementAge" for="legalRetirementAge"></label>
+              <input type="number" class="form-control compact-input" id="legalRetirementAge" value="67" title="" />
             </div>
             <div class="parameter-group">
-              <label class="compact-label" for="fixedMonthlyPension">Monthly Pension (€):</label>
-              <input type="number" class="form-control compact-input" id="fixedMonthlyPension" value="5000" />
+              <label class="compact-label" data-key="label_fixedMonthlyPension" for="fixedMonthlyPension"></label>
+              <input type="number" class="form-control compact-input" id="fixedMonthlyPension" value="5000" title="" />
             </div>
             <div class="parameter-group">
-              <label class="compact-label" for="currentAssets">Current Assets (€):</label>
-              <input type="number" class="form-control compact-input" id="currentAssets" value="600000" />
+              <label class="compact-label" data-key="label_currentAssets" for="currentAssets"></label>
+              <input type="number" class="form-control compact-input" id="currentAssets" value="600000" title="" />
             </div>
             <div class="parameter-group">
-              <label class="compact-label" for="capitalGainsTaxRate">Capital Gains Tax (%):</label>
-              <input type="number" step="0.1" class="form-control compact-input" id="capitalGainsTaxRate" value="26.25" />
+              <label class="compact-label" data-key="label_capitalGainsTaxRate" for="capitalGainsTaxRate"></label>
+              <input type="number" step="0.1" class="form-control compact-input" id="capitalGainsTaxRate" value="26.25" title="" />
             </div>
             <div class="parameter-group">
-              <label class="compact-label" for="annualSavings">Annual Savings (€):</label>
-              <input type="number" class="form-control compact-input" id="annualSavings" value="18000" />
+              <label class="compact-label" data-key="label_annualSavings" for="annualSavings"></label>
+              <input type="number" class="form-control compact-input" id="annualSavings" value="18000" title="" />
             </div>
             <hr class="my-1" />
             <!-- Variable Parameters -->
-            <p class="mb-1"><strong>Variable</strong></p>
+            <p class="mb-1"><strong data-key="section_variable">Variable</strong></p>
             <div class="parameter-group">
-              <label class="compact-label" for="retirementAge">
-                Retirement Age (<span id="retirementAgeDisplay">60</span>):
-              </label>
-              <input type="range" class="form-control-range" id="retirementAge" min="55" max="66" value="60" />
+              <label class="compact-label" data-key="label_retirementAge" for="retirementAge"></label>
+              <input type="number" class="form-control compact-input" id="retirementAge" value="60" title="" />
             </div>
             <div class="parameter-group">
-              <label class="compact-label" for="averageROI">
-                Average ROI (%) (<span id="averageROIDisplay">7</span>):
-              </label>
-              <input type="range" class="form-control-range" id="averageROI" min="5" max="11" value="7" />
+              <label class="compact-label" data-key="label_averageROI" for="averageROI"></label>
+              <input type="number" step="0.1" class="form-control compact-input" id="averageROI" value="7" title="" />
             </div>
             <div class="parameter-group">
-              <label class="compact-label" for="averageInflation">
-                Inflation (%) (<span id="averageInflationDisplay">3</span>):
-              </label>
-              <input type="range" class="form-control-range" id="averageInflation" min="2" max="5" value="3" />
+              <label class="compact-label" data-key="label_averageInflation" for="averageInflation"></label>
+              <input type="number" step="0.1" class="form-control compact-input" id="averageInflation" value="3" title="" />
             </div>
             <hr class="my-1" />
             <!-- Volatility Parameters -->
-            <p class="mb-1"><strong>Volatility</strong></p>
+            <p class="mb-1"><strong data-key="section_volatility">Volatility</strong></p>
             <div class="parameter-group">
-              <label class="compact-label" for="ROI_volatility">
-                ROI Volatility (e.g., 0.02):
-              </label>
-              <input type="number" step="0.001" class="form-control compact-input" id="ROI_volatility" value="0.02" />
+              <label class="compact-label" data-key="label_ROI_volatility" for="ROI_volatility"></label>
+              <input type="number" step="0.001" class="form-control compact-input" id="ROI_volatility" value="0.02" title="" />
             </div>
             <div class="parameter-group">
-              <label class="compact-label" for="inflation_volatility">
-                Inflation Volatility (e.g., 0.005):
-              </label>
-              <input type="number" step="0.001" class="form-control compact-input" id="inflation_volatility" value="0.005" />
+              <label class="compact-label" data-key="label_inflation_volatility" for="inflation_volatility"></label>
+              <input type="number" step="0.001" class="form-control compact-input" id="inflation_volatility" value="0.005" title="" />
             </div>
             <hr class="my-1" />
-            <!-- Expenses -->
-            <p class="mb-1"><strong>Monthly Expenses (€)</strong></p>
+            <!-- Monthly Expenses -->
+            <p class="mb-1"><strong data-key="section_monthlyExpenses">Monthly Expenses (€)</strong></p>
             <div class="parameter-group">
-              <label class="compact-label" for="expenseHealth">Health:</label>
-              <input type="number" class="form-control compact-input" id="expenseHealth" value="300" />
+              <label class="compact-label" data-key="label_expenseHealth" for="expenseHealth"></label>
+              <input type="number" class="form-control compact-input" id="expenseHealth" value="300" title="" />
             </div>
             <div class="parameter-group">
-              <label class="compact-label" for="expenseFood">Food:</label>
-              <input type="number" class="form-control compact-input" id="expenseFood" value="500" />
+              <label class="compact-label" data-key="label_expenseFood" for="expenseFood"></label>
+              <input type="number" class="form-control compact-input" id="expenseFood" value="500" title="" />
             </div>
             <div class="parameter-group">
-              <label class="compact-label" for="expenseEntertainment">Entertainment:</label>
-              <input type="number" class="form-control compact-input" id="expenseEntertainment" value="200" />
+              <label class="compact-label" data-key="label_expenseEntertainment" for="expenseEntertainment"></label>
+              <input type="number" class="form-control compact-input" id="expenseEntertainment" value="200" title="" />
             </div>
             <div class="parameter-group">
-              <label class="compact-label" for="expenseShopping">Shopping:</label>
-              <input type="number" class="form-control compact-input" id="expenseShopping" value="100" />
+              <label class="compact-label" data-key="label_expenseShopping" for="expenseShopping"></label>
+              <input type="number" class="form-control compact-input" id="expenseShopping" value="100" title="" />
             </div>
             <div class="parameter-group">
-              <label class="compact-label" for="expenseUtilities">Utilities:</label>
-              <input type="number" class="form-control compact-input" id="expenseUtilities" value="200" />
+              <label class="compact-label" data-key="label_expenseUtilities" for="expenseUtilities"></label>
+              <input type="number" class="form-control compact-input" id="expenseUtilities" value="200" title="" />
             </div>
-            <p class="mb-1 mt-2"><strong>Annual Expenses (€)</strong></p>
+            <!-- Annual Expenses -->
+            <p class="mb-1 mt-2"><strong data-key="section_annualExpenses">Annual Expenses (€)</strong></p>
             <div class="parameter-group">
-              <label class="compact-label" for="expenseVacations">Vacations:</label>
-              <input type="number" class="form-control compact-input" id="expenseVacations" value="3000" />
-            </div>
-            <div class="parameter-group">
-              <label class="compact-label" for="expenseRepairs">Repairs:</label>
-              <input type="number" class="form-control compact-input" id="expenseRepairs" value="2000" />
+              <label class="compact-label" data-key="label_expenseVacations" for="expenseVacations"></label>
+              <input type="number" class="form-control compact-input" id="expenseVacations" value="3000" title="" />
             </div>
             <div class="parameter-group">
-              <label class="compact-label" for="expenseCarMaintenance">Car Maintenance:</label>
-              <input type="number" class="form-control compact-input" id="expenseCarMaintenance" value="1500" />
+              <label class="compact-label" data-key="label_expenseRepairs" for="expenseRepairs"></label>
+              <input type="number" class="form-control compact-input" id="expenseRepairs" value="2000" title="" />
+            </div>
+            <div class="parameter-group">
+              <label class="compact-label" data-key="label_expenseCarMaintenance" for="expenseCarMaintenance"></label>
+              <input type="number" class="form-control compact-input" id="expenseCarMaintenance" value="1500" title="" />
             </div>
             <hr class="my-1" />
             <!-- Simulation Control -->
             <div class="parameter-group">
-              <label class="compact-label" for="simulationRuns">Simulations:</label>
-              <input type="number" class="form-control compact-input" id="simulationRuns" value="1000" />
+              <label class="compact-label" data-key="label_simulationRuns" for="simulationRuns"></label>
+              <input type="number" class="form-control compact-input" id="simulationRuns" value="1000" title="" />
             </div>
             <hr class="my-1" />
             <!-- Save/Load Section -->
-            <p class="mb-1"><strong>Save/Load</strong></p>
-            <textarea id="paramsJSON" class="form-control compact-input" rows="3" placeholder="Parameters JSON"></textarea>
+            <p class="mb-1"><strong data-key="label_saveLoad"></strong></p>
+            <textarea id="paramsJSON" class="form-control compact-input" rows="3" placeholder=""></textarea>
             <div class="mt-1">
-              <button id="saveParamsBtn" class="btn btn-primary btn-sm">Save</button>
-              <button id="loadParamsBtn" class="btn btn-secondary btn-sm">Load</button>
+              <button id="saveParamsBtn" class="btn btn-primary btn-sm" data-key="btn_save">Save</button>
+              <button id="loadParamsBtn" class="btn btn-secondary btn-sm" data-key="btn_load">Load</button>
             </div>
           </div>
         </div>
@@ -164,7 +168,7 @@
       <div class="col-md-9">
         <div class="card">
           <div class="card-header py-1">
-            <strong>Simulation Results</strong>
+            <strong data-key="section_results">Simulation Results</strong>
           </div>
           <div class="card-body py-2">
             <div class="chart-container">
@@ -172,9 +176,7 @@
             </div>
             <hr />
             <p id="successProbability" class="lead small"></p>
-            <p class="text-muted small">
-              Note: Inflation is applied annually to expenses. For early retirement, assets cover costs until pension begins.
-            </p>
+            <p id="simulationExplanation" class="text-muted small"></p>
           </div>
         </div>
       </div>
@@ -182,56 +184,203 @@
   </div>
 
   <script>
-    /*****************************************************************
-     * Utility: Generate a normally distributed random number via
-     * the Box–Muller transform.
-     *****************************************************************/
+    // --- Missing Function: randomNormal ---
+    // Generates a normally distributed random number using the Box-Muller transform.
     function randomNormal(mean, std) {
       let u = 0, v = 0;
-      while(u === 0) u = Math.random();
-      while(v === 0) v = Math.random();
+      while (u === 0) u = Math.random();
+      while (v === 0) v = Math.random();
       return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v) * std + mean;
     }
 
-    /*****************************************************************
-     * Read parameters from the UI.
-     * If volatility fields are empty, use defaults.
-     *****************************************************************/
+    // Global language variable
+    let currentLanguage = "en";
+
+    // Translation dictionary
+    const translations = {
+      en: {
+        title_main: "Early Retirement Monte Carlo Simulation",
+        languageLabel: "Language",
+        section_parameters: "Parameters",
+        section_fixed: "Fixed",
+        label_currentAge: "Current Age",
+        tooltip_currentAge: "Your current age (e.g., 54). Determines the starting point of the simulation.",
+        label_legalRetirementAge: "Legal Retirement Age",
+        tooltip_legalRetirementAge: "The age at which you begin receiving your fixed pension.",
+        label_fixedMonthlyPension: "Monthly Pension (€)",
+        tooltip_fixedMonthlyPension: "Your fixed monthly pension, starting at the legal retirement age.",
+        label_currentAssets: "Current Assets (€)",
+        tooltip_currentAssets: "The amount of assets and savings you currently have.",
+        label_capitalGainsTaxRate: "Capital Gains Tax Rate (%)",
+        tooltip_capitalGainsTaxRate: "The tax rate applied to positive investment returns.",
+        label_annualSavings: "Annual Savings (€)",
+        tooltip_annualSavings: "The amount you save each year while working.",
+        section_variable: "Variable",
+        label_retirementAge: "Intended Retirement Age",
+        tooltip_retirementAge: "The age you plan to retire. Early retirement means assets must cover living costs until pension starts.",
+        label_averageROI: "Average ROI (%)",
+        tooltip_averageROI: "The expected annual return on your investments.",
+        label_averageInflation: "Average Inflation (%)",
+        tooltip_averageInflation: "The expected annual inflation rate affecting your expenses.",
+        section_volatility: "Volatility",
+        label_ROI_volatility: "ROI Volatility",
+        tooltip_ROI_volatility: "Standard deviation for annual ROI fluctuations (e.g., 0.02 for 2%).",
+        label_inflation_volatility: "Inflation Volatility",
+        tooltip_inflation_volatility: "Standard deviation for annual inflation fluctuations (e.g., 0.005 for 0.5%).",
+        section_monthlyExpenses: "Monthly Expenses (€)",
+        label_expenseHealth: "Health",
+        tooltip_expenseHealth: "Monthly spending on health-related costs.",
+        label_expenseFood: "Food",
+        tooltip_expenseFood: "Monthly spending on food.",
+        label_expenseEntertainment: "Entertainment",
+        tooltip_expenseEntertainment: "Monthly spending on entertainment.",
+        label_expenseShopping: "Shopping",
+        tooltip_expenseShopping: "Monthly spending on shopping.",
+        label_expenseUtilities: "Utilities",
+        tooltip_expenseUtilities: "Monthly spending on utilities.",
+        section_annualExpenses: "Annual Expenses (€)",
+        label_expenseVacations: "Vacations",
+        tooltip_expenseVacations: "Annual spending on vacations.",
+        label_expenseRepairs: "Repairs",
+        tooltip_expenseRepairs: "Annual spending on repairs.",
+        label_expenseCarMaintenance: "Car Maintenance",
+        tooltip_expenseCarMaintenance: "Annual spending on car maintenance.",
+        label_simulationRuns: "Simulations",
+        tooltip_simulationRuns: "The number of simulation runs to perform.",
+        label_saveLoad: "Save/Load Parameters",
+        tooltip_saveLoad: "Save or load your simulation parameters.",
+        btn_save: "Save",
+        btn_load: "Load",
+        section_results: "Simulation Results",
+        successProbability: "Success Probability",
+        explanation_simulation: "Simulation Explanation: The simulation has two phases. In the accumulation phase (from your current age until your intended retirement), your assets grow with savings and investment returns. In the distribution phase (from retirement until age 90), your assets cover your living expenses—which increase with inflation—until your pension begins at the legal retirement age. The success probability shows the percentage of simulations in which your assets never drop below zero."
+      },
+      de: {
+        title_main: "Monte-Carlo-Simulation für Frühverrentung",
+        languageLabel: "Sprache",
+        section_parameters: "Parameter",
+        section_fixed: "Fest",
+        label_currentAge: "Aktuelles Alter",
+        tooltip_currentAge: "Ihr aktuelles Alter (z. B. 54). Bestimmt den Ausgangspunkt der Simulation.",
+        label_legalRetirementAge: "Gesetzliches Rentenalter",
+        tooltip_legalRetirementAge: "Das Alter, ab dem Sie Ihre feste Rente erhalten.",
+        label_fixedMonthlyPension: "Monatliche Rente (€)",
+        tooltip_fixedMonthlyPension: "Ihre feste monatliche Rente, die ab dem gesetzlichen Rentenalter beginnt.",
+        label_currentAssets: "Aktuelle Vermögenswerte (€)",
+        tooltip_currentAssets: "Der Betrag an Ersparnissen und Vermögen, den Sie derzeit besitzen.",
+        label_capitalGainsTaxRate: "Kapitalertragssteuer (%)",
+        tooltip_capitalGainsTaxRate: "Der Steuersatz auf positive Anlagegewinne.",
+        label_annualSavings: "Jährliche Ersparnisse (€)",
+        tooltip_annualSavings: "Der Betrag, den Sie jährlich während Ihrer Erwerbstätigkeit sparen.",
+        section_variable: "Variabel",
+        label_retirementAge: "Geplantes Rentenalter",
+        tooltip_retirementAge: "Das Alter, in dem Sie in den Ruhestand gehen möchten. Bei Frühverrentung müssen die Vermögenswerte die Lebenshaltungskosten bis zum Rentenbeginn decken.",
+        label_averageROI: "Durchschnittliche Rendite (%)",
+        tooltip_averageROI: "Die erwartete jährliche Rendite Ihrer Investitionen.",
+        label_averageInflation: "Durchschnittliche Inflation (%)",
+        tooltip_averageInflation: "Die erwartete jährliche Inflationsrate, die Ihre Ausgaben beeinflusst.",
+        section_volatility: "Volatilität",
+        label_ROI_volatility: "Rendite-Volatilität",
+        tooltip_ROI_volatility: "Standardabweichung der jährlichen Renditeschwankungen (z. B. 0,02 für 2%).",
+        label_inflation_volatility: "Inflations-Volatilität",
+        tooltip_inflation_volatility: "Standardabweichung der jährlichen Inflationsschwankungen (z. B. 0,005 für 0,5%).",
+        section_monthlyExpenses: "Monatliche Ausgaben (€)",
+        label_expenseHealth: "Gesundheit",
+        tooltip_expenseHealth: "Monatliche Ausgaben für Gesundheitskosten.",
+        label_expenseFood: "Lebensmittel",
+        tooltip_expenseFood: "Monatliche Ausgaben für Lebensmittel.",
+        label_expenseEntertainment: "Unterhaltung",
+        tooltip_expenseEntertainment: "Monatliche Ausgaben für Unterhaltung.",
+        label_expenseShopping: "Einkaufen",
+        tooltip_expenseShopping: "Monatliche Ausgaben für Einkäufe.",
+        label_expenseUtilities: "Nebenkosten",
+        tooltip_expenseUtilities: "Monatliche Ausgaben für Nebenkosten.",
+        section_annualExpenses: "Jährliche Ausgaben (€)",
+        label_expenseVacations: "Urlaub",
+        tooltip_expenseVacations: "Jährliche Ausgaben für Urlaub.",
+        label_expenseRepairs: "Reparaturen",
+        tooltip_expenseRepairs: "Jährliche Ausgaben für Reparaturen.",
+        label_expenseCarMaintenance: "Autopflege",
+        tooltip_expenseCarMaintenance: "Jährliche Ausgaben für Autopflege.",
+        label_simulationRuns: "Simulationen",
+        tooltip_simulationRuns: "Die Anzahl der durchzuführenden Simulationen.",
+        label_saveLoad: "Parameter speichern/laden",
+        tooltip_saveLoad: "Speichern oder Laden Ihrer Simulationsparameter.",
+        btn_save: "Speichern",
+        btn_load: "Laden",
+        section_results: "Simulationsergebnisse",
+        successProbability: "Erfolgswahrscheinlichkeit",
+        explanation_simulation: "Simulations-Erklärung: Die Simulation modelliert zwei Phasen. In der Ansparphase (von Ihrem aktuellen Alter bis zum geplanten Rentenalter) wachsen Ihre Vermögenswerte durch Ersparnisse und Renditen. In der Auszahlungsphase (vom Rentenbeginn bis zum Alter 90) decken Ihre Vermögenswerte Ihre Lebenshaltungskosten – die durch Inflation steigen – bis Ihre Rente einsetzt. Die Erfolgswahrscheinlichkeit gibt den Prozentsatz der Simulationen an, bei denen Ihre Vermögenswerte nie unter null fallen."
+      }
+    };
+
+    // Update all UI text based on currentLanguage
+    function updateLanguage() {
+      document.querySelectorAll("[data-key]").forEach(el => {
+        const key = el.getAttribute("data-key");
+        if (translations[currentLanguage][key]) {
+          el.innerText = translations[currentLanguage][key];
+        }
+      });
+      const inputs = document.querySelectorAll("input");
+      inputs.forEach(input => {
+        const tooltipKey = "tooltip_" + input.id;
+        if (translations[currentLanguage][tooltipKey]) {
+          input.title = translations[currentLanguage][tooltipKey];
+        }
+      });
+      document.getElementById("paramsJSON").placeholder = translations[currentLanguage]["label_saveLoad"];
+      document.getElementById("simulationExplanation").innerText = translations[currentLanguage]["explanation_simulation"];
+    }
+
+    // Language switch event
+    document.getElementById("languageSelect").addEventListener("change", function() {
+      currentLanguage = this.value;
+      updateLanguage();
+      updateSimulation();
+    });
+
+    // Helper: Parse a number input (replace comma with dot if needed)
+    function parseNum(id) {
+      let val = document.getElementById(id).value;
+      if (currentLanguage === "de") {
+        val = val.replace(",", ".");
+      }
+      return parseFloat(val);
+    }
+
+    // Get parameters from the UI
     function getParameters() {
-      let roiVol = document.getElementById("ROI_volatility").value;
-      let inflVol = document.getElementById("inflation_volatility").value;
       return {
-        currentAge: parseInt(document.getElementById("currentAge").value),
-        legalRetirementAge: parseInt(document.getElementById("legalRetirementAge").value),
-        fixedMonthlyPension: parseFloat(document.getElementById("fixedMonthlyPension").value),
-        currentAssets: parseFloat(document.getElementById("currentAssets").value),
-        capitalGainsTaxRate: parseFloat(document.getElementById("capitalGainsTaxRate").value) / 100,
-        annualSavings: parseFloat(document.getElementById("annualSavings").value),
-        intendedRetirementAge: parseInt(document.getElementById("retirementAge").value),
-        averageROI: parseFloat(document.getElementById("averageROI").value) / 100,
-        averageInflation: parseFloat(document.getElementById("averageInflation").value) / 100,
-        ROI_volatility: roiVol === "" ? 0.02 : parseFloat(roiVol),
-        inflation_volatility: inflVol === "" ? 0.005 : parseFloat(inflVol),
+        currentAge: parseNum("currentAge"),
+        legalRetirementAge: parseNum("legalRetirementAge"),
+        fixedMonthlyPension: parseNum("fixedMonthlyPension"),
+        currentAssets: parseNum("currentAssets"),
+        capitalGainsTaxRate: parseNum("capitalGainsTaxRate") / 100,
+        annualSavings: parseNum("annualSavings"),
+        intendedRetirementAge: parseNum("retirementAge"),
+        averageROI: parseNum("averageROI") / 100,
+        averageInflation: parseNum("averageInflation") / 100,
+        ROI_volatility: parseNum("ROI_volatility") || 0.02,
+        inflation_volatility: parseNum("inflation_volatility") || 0.005,
         monthlyExpenses: {
-          health: parseFloat(document.getElementById("expenseHealth").value),
-          food: parseFloat(document.getElementById("expenseFood").value),
-          entertainment: parseFloat(document.getElementById("expenseEntertainment").value),
-          shopping: parseFloat(document.getElementById("expenseShopping").value),
-          utilities: parseFloat(document.getElementById("expenseUtilities").value)
+          health: parseNum("expenseHealth"),
+          food: parseNum("expenseFood"),
+          entertainment: parseNum("expenseEntertainment"),
+          shopping: parseNum("expenseShopping"),
+          utilities: parseNum("expenseUtilities")
         },
         annualExpenses: {
-          vacations: parseFloat(document.getElementById("expenseVacations").value),
-          repairs: parseFloat(document.getElementById("expenseRepairs").value),
-          carMaintenance: parseFloat(document.getElementById("expenseCarMaintenance").value)
+          vacations: parseNum("expenseVacations"),
+          repairs: parseNum("expenseRepairs"),
+          carMaintenance: parseNum("expenseCarMaintenance")
         },
-        simulationRuns: parseInt(document.getElementById("simulationRuns").value),
+        simulationRuns: parseNum("simulationRuns"),
         simulationEndAge: 90
       };
     }
 
-    /*****************************************************************
-     * Update UI elements from a parameters object.
-     *****************************************************************/
+    // Update UI inputs from a parameters object
     function loadParametersFromObject(params) {
       document.getElementById("currentAge").value = params.currentAge;
       document.getElementById("legalRetirementAge").value = params.legalRetirementAge;
@@ -253,16 +402,9 @@
       document.getElementById("expenseRepairs").value = params.annualExpenses.repairs;
       document.getElementById("expenseCarMaintenance").value = params.annualExpenses.carMaintenance;
       document.getElementById("simulationRuns").value = params.simulationRuns;
-      document.getElementById("retirementAgeDisplay").innerText = params.intendedRetirementAge;
-      document.getElementById("averageROIDisplay").innerText = (params.averageROI * 100).toFixed(1);
-      document.getElementById("averageInflationDisplay").innerText = (params.averageInflation * 100).toFixed(1);
     }
 
-    /*****************************************************************
-     * Run the Monte Carlo simulation.
-     * Tracks asset values and monthly spending across simulation runs.
-     * In the accumulation phase, monthly spending is set to 0 (so bars display).
-     *****************************************************************/
+    // Run the Monte Carlo simulation (accumulation and distribution phases)
     function runSimulation(params) {
       let ages = [];
       for (let age = params.currentAge; age <= params.simulationEndAge; age++) {
@@ -270,22 +412,19 @@
       }
       let simulations = [];
       let successCount = 0;
-
       for (let i = 0; i < params.simulationRuns; i++) {
         let assets = [];
         let spendings = [];
         let asset = params.currentAssets;
         let failed = false;
-
-        // Accumulation phase
+        // Accumulation phase: spending = 0
         for (let age = params.currentAge; age < params.intendedRetirementAge; age++) {
           let r = randomNormal(params.averageROI, params.ROI_volatility);
           let effectiveR = r > 0 ? r * (1 - params.capitalGainsTaxRate) : r;
           asset = asset * (1 + effectiveR) + params.annualSavings;
           assets.push(asset);
-          spendings.push(0); // Use 0 so that spending bars display
+          spendings.push(0);
         }
-
         // Distribution phase
         let baseMonthlyExpenses = params.monthlyExpenses.health + params.monthlyExpenses.food +
                                   params.monthlyExpenses.entertainment + params.monthlyExpenses.shopping +
@@ -293,7 +432,6 @@
         let baseAnnualExpenses = params.annualExpenses.vacations + params.annualExpenses.repairs +
                                  params.annualExpenses.carMaintenance;
         let annualExpense = baseMonthlyExpenses * 12 + baseAnnualExpenses;
-
         for (let age = params.intendedRetirementAge; age <= params.simulationEndAge; age++) {
           let income = (age >= params.legalRetirementAge) ? params.fixedMonthlyPension * 12 : 0;
           let r = randomNormal(params.averageROI, params.ROI_volatility);
@@ -310,7 +448,6 @@
         if (!failed) successCount++;
         simulations.push({ assets: assets, spendings: spendings });
       }
-
       return {
         ages: ages,
         simulations: simulations,
@@ -318,15 +455,12 @@
       };
     }
 
-    /*****************************************************************
-     * Calculate percentiles (10th, median, 90th) for a property.
-     *****************************************************************/
+    // Calculate percentiles (10th, median, 90th) for a given property
     function calculatePercentilesForProperty(simulationResults, propName) {
       let numYears = simulationResults.ages.length;
       let median = [];
       let p10 = [];
       let p90 = [];
-
       for (let j = 0; j < numYears; j++) {
         let values = simulationResults.simulations
                         .map(run => run[propName][j])
@@ -349,10 +483,7 @@
       return { median: median, p10: p10, p90: p90 };
     }
 
-    /*****************************************************************
-     * Update the combined Chart.js chart.
-     * Assets are shown as lines (left y‑axis), spending as bars (right y‑axis).
-     *****************************************************************/
+    // Update the chart: Assets as lines (left y-axis), Spending as bars (right y-axis)
     let assetChart;
     function updateCombinedChart(simulationResults) {
       let ages = simulationResults.ages;
@@ -363,7 +494,7 @@
         labels: ages,
         datasets: [
           {
-            label: "Assets 10th Percentile",
+            label: translations[currentLanguage].successProbability + " (" + "Assets 10th" + ")",
             data: assetPercentiles.p10,
             borderColor: "red",
             fill: false,
@@ -377,7 +508,7 @@
             yAxisID: "y-axis-assets"
           },
           {
-            label: "Assets 90th Percentile",
+            label: "Assets 90th",
             data: assetPercentiles.p90,
             borderColor: "green",
             fill: false,
@@ -385,7 +516,7 @@
           },
           {
             type: 'bar',
-            label: "Spending 10th Percentile",
+            label: "Spending 10th",
             data: spendingPercentiles.p10,
             backgroundColor: "rgba(255, 159, 64, 0.6)",
             yAxisID: "y-axis-spending"
@@ -399,14 +530,13 @@
           },
           {
             type: 'bar',
-            label: "Spending 90th Percentile",
+            label: "Spending 90th",
             data: spendingPercentiles.p90,
             backgroundColor: "rgba(201, 203, 207, 0.6)",
             yAxisID: "y-axis-spending"
           }
         ]
       };
-
       if (assetChart) {
         assetChart.data = data;
         assetChart.update();
@@ -418,7 +548,7 @@
             responsive: true,
             title: {
               display: true,
-              text: "Projected Assets & Monthly Spending Over Time"
+              text: translations[currentLanguage].title_main
             },
             scales: {
               xAxes: [{
@@ -435,8 +565,7 @@
               }, {
                 id: "y-axis-spending",
                 type: "linear",
-                position: "right",
-                offset: true,
+                position: "right", // Ensures spending axis is on the right side
                 scaleLabel: { display: true, labelString: "Monthly Spending (€)" },
                 ticks: {
                   callback: function (value) { return "€" + value.toLocaleString(); }
@@ -457,23 +586,16 @@
       }
     }
 
-    /*****************************************************************
-     * Update simulation and chart.
-     *****************************************************************/
+    // Update simulation: Run simulation and update chart and success probability text
     function updateSimulation() {
       let params = getParameters();
-      document.getElementById("retirementAgeDisplay").innerText = params.intendedRetirementAge;
-      document.getElementById("averageROIDisplay").innerText = (params.averageROI * 100).toFixed(1);
-      document.getElementById("averageInflationDisplay").innerText = (params.averageInflation * 100).toFixed(1);
       let simulationResults = runSimulation(params);
       updateCombinedChart(simulationResults);
       document.getElementById("successProbability").innerText =
-          "Success Probability: " + (simulationResults.successProbability * 100).toFixed(1) + "%";
+          translations[currentLanguage].successProbability + ": " + (simulationResults.successProbability * 100).toFixed(1) + "%";
     }
 
-    /*****************************************************************
-     * Save parameters to localStorage and update the textarea.
-     *****************************************************************/
+    // Save parameters to localStorage and display in the textarea
     function saveParameters() {
       let params = getParameters();
       let jsonStr = JSON.stringify(params, null, 2);
@@ -481,9 +603,7 @@
       document.getElementById("paramsJSON").value = jsonStr;
     }
 
-    /*****************************************************************
-     * Load parameters from localStorage and update the UI.
-     *****************************************************************/
+    // Load parameters from localStorage and update UI
     function loadSavedParameters() {
       let jsonStr = localStorage.getItem("savedParameters");
       if (jsonStr) {
@@ -500,12 +620,12 @@
       }
     }
 
-    // Event listeners.
+    // Set event listeners
     document.querySelectorAll("input").forEach(el => el.addEventListener("input", updateSimulation));
     document.getElementById("saveParamsBtn").addEventListener("click", saveParameters);
     document.getElementById("loadParamsBtn").addEventListener("click", loadSavedParameters);
 
-    // On load, check for stored parameters.
+    // On window load: load stored parameters (if any), update language, and run simulation.
     window.onload = function() {
       let stored = localStorage.getItem("savedParameters");
       if (stored) {
@@ -515,6 +635,7 @@
           console.error("Error loading stored parameters:", e);
         }
       }
+      updateLanguage();
       updateSimulation();
     };
   </script>
