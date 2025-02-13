@@ -17,14 +17,21 @@
     }
     .parameter-group {
       margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+    }
+    .parameter-group label {
+      width: 300px; /* fixed label width */
+      margin-bottom: 0; /* remove default margin */
     }
     .compact-label {
       font-size: 0.9rem;
     }
     .compact-input {
       font-size: 0.9rem;
-      padding: 0.25rem;
+      padding: 0.10rem;
       height: auto;
+      flex-grow: 1;
     }
     .chart-container {
       position: relative;
@@ -41,7 +48,7 @@
   </style>
 </head>
 <body>
-  <!-- Add an id to the main container so we can capture it -->
+  <!-- Main container with an id for PDF capture -->
   <div class="container-fluid" id="mainContainer">
     <!-- Header with Language Switcher -->
     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -643,7 +650,9 @@
         let imgHeight = canvasHeight * imgWidth / canvasWidth;
         pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
         const date = new Date();
-        let filename = "retirecalc_" + date.getFullYear() + "-" + String(date.getMonth()+1).padStart(2, '0') + "-" + String(date.getDate()).padStart(2, '0') + ".pdf";
+        let filename = "retirecalc_" + date.getFullYear() + "-" +
+          String(date.getMonth()+1).padStart(2, '0') + "-" +
+          String(date.getDate()).padStart(2, '0') + ".pdf";
         pdf.save(filename);
       });
     }
