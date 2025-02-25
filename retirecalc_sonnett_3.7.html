@@ -1,0 +1,1941 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Early Retirement Monte Carlo Simulation</title>
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" />
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- jsPDF and html2canvas for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+  <!-- jQuery for Bootstrap modal support -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <style>
+    body {
+      padding: 10px;
+    }
+    .parameter-group {
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+    }
+    .parameter-group label {
+      width: 300px; /* fixed label width */
+      margin-bottom: 0; /* remove default margin */
+    }
+    .compact-label {
+      font-size: 0.9rem;
+    }
+    .compact-input {
+      font-size: 0.9rem;
+      padding: 0.10rem;
+      height: auto;
+      flex-grow: 1;
+    }
+    .chart-container {
+      position: relative;
+      height: 500px;
+    }
+    .parameters-panel {
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .language-switch {
+      float: right;
+      margin-top: 5px;
+    }
+    
+    /* Loading indicator */
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+    
+    .spinner {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #3498db;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    /* Input validation styles */
+    input:invalid {
+      border-color: #dc3545;
+      box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+    
+    /* Tooltip styles */
+    .tooltip-wrapper {
+      position: relative;
+      display: inline-block;
+    }
+    
+    .tooltip-icon {
+      margin-left: 5px;
+      color: #6c757d;
+      cursor: pointer;
+    }
+    
+    .tooltip-content {
+      visibility: hidden;
+      width: 200px;
+      background-color: #555;
+      color: #fff;
+      text-align: center;
+      border-radius: 6px;
+      padding: 5px;
+      position: absolute;
+      z-index: 1;
+      bottom: 125%;
+      left: 50%;
+      margin-left: -100px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .tooltip-wrapper:hover .tooltip-content {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    /* Improved responsiveness */
+    @media (max-width: 768px) {
+      .parameter-group {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      
+      .parameter-group label {
+        width: 100%;
+        margin-bottom: 0.25rem;
+      }
+      
+      .card-body {
+        padding: 0.5rem;
+      }
+    }
+    
+    /* Dark mode support */
+    body.dark-mode {
+      background-color: #121212;
+      color: #e0e0e0;
+    }
+    
+    body.dark-mode .card {
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+      border-color: #333;
+    }
+    
+    body.dark-mode .card-header {
+      background-color: #2a2a2a;
+      border-color: #333;
+    }
+    
+    body.dark-mode .form-control {
+      background-color: #2a2a2a;
+      border-color: #444;
+      color: #e0e0e0;
+    }
+    
+    body.dark-mode .list-group-item {
+      background-color: #2a2a2a;
+      color: #e0e0e0;
+      border-color: #444;
+    }
+    
+    body.dark-mode .text-muted {
+      color: #aaa !important;
+    }
+    
+    body.dark-mode .bg-light {
+      background-color: #2a2a2a !important;
+      color: #e0e0e0;
+    }
+    
+    /* Fix for modal in dark mode */
+    body.dark-mode .modal-content {
+      background-color: #1e1e1e;
+      color: #e0e0e0;
+    }
+    
+    body.dark-mode .modal-header, 
+    body.dark-mode .modal-footer {
+      border-color: #444;
+    }
+    
+    body.dark-mode .close {
+      color: #e0e0e0;
+    }
+    
+    body.dark-mode .table {
+      color: #e0e0e0;
+    }
+    
+    body.dark-mode .table-striped tbody tr:nth-of-type(odd) {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+    
+    /* Focus indicators for accessibility */
+    :focus {
+      outline: 3px solid #4F94CD !important;
+      outline-offset: 1px;
+    }
+    
+    /* High contrast mode styles */
+    @media (forced-colors: active) {
+      .chart-container {
+        forced-color-adjust: none;
+      }
+      
+      .btn-primary {
+        background-color: Highlight !important;
+        color: HighlightText !important;
+        border-color: ButtonBorder !important;
+      }
+      
+      .card {
+        border-color: ButtonBorder !important;
+      }
+      
+      input, select, textarea {
+        border-color: ButtonBorder !important;
+      }
+    }
+    
+    /* Screen reader only class */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      border: 0;
+    }
+    
+    /* Skip link styling */
+    .visually-hidden-focusable:not(:focus):not(:focus-within) {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+    
+    .visually-hidden-focusable:focus {
+      position: fixed;
+      top: 0;
+      left: 0;
+      padding: 10px;
+      background: white;
+      z-index: 1050;
+      color: black;
+      font-weight: bold;
+      display: block;
+      text-decoration: none;
+    }
+    
+    /* Notification styles */
+    .alert {
+      transition: opacity 0.15s linear;
+    }
+    
+    /* Summary cards */
+    .summary-card {
+      transition: all 0.3s ease;
+    }
+    
+    .summary-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+  <!-- Accessibility: Skip link for keyboard navigation -->
+  <a href="#mainContent" class="visually-hidden-focusable">Skip to main content</a>
+
+  <!-- Main container with an id for PDF capture -->
+  <div class="container-fluid" id="mainContainer">
+    <!-- Header with Language Switcher and Theme Toggle -->
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h3 data-key="title_main">Early Retirement Monte Carlo Simulation</h3>
+      <div class="d-flex">
+        <button id="themeToggle" class="btn btn-sm btn-outline-secondary mr-2">
+          <i id="themeIcon" class="fa fa-moon"></i> 
+          <span data-key="theme_toggle">Toggle Dark Mode</span>
+        </button>
+        <div class="language-switch">
+          <label for="languageSelect" data-key="languageLabel">Language</label>
+          <select id="languageSelect" class="form-control form-control-sm" style="width: auto;">
+            <option value="en">English</option>
+            <option value="de">Deutsch</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Notification area -->
+    <div id="notificationArea"></div>
+    
+    <!-- Validation errors area -->
+    <div id="validationErrors" class="d-none"></div>
+    
+    <div class="row" id="mainContent" role="main">
+      <!-- Parameters Sidebar (3 columns) -->
+      <div class="col-md-3 parameters-panel" role="complementary">
+        <div class="card mb-2">
+          <div class="card-header py-1">
+            <strong data-key="section_parameters">Parameters</strong>
+          </div>
+          <div class="card-body py-2">
+            <!-- Fixed Parameters -->
+            <p class="mb-1"><strong data-key="section_fixed">Fixed</strong></p>
+            <div class="parameter-group">
+              <div class="d-flex align-items-center">
+                <label class="compact-label me-1" data-key="label_currentAge" for="currentAge" id="currentAgeLabel"></label>
+                <div class="tooltip-wrapper d-inline-block">
+                  <span class="tooltip-icon">ⓘ</span>
+                  <div class="tooltip-content" data-key="tooltip_currentAge"></div>
+                </div>
+              </div>
+              <input type="number" class="form-control compact-input" id="currentAge" value="54" 
+                     aria-labelledby="currentAgeLabel" aria-describedby="currentAgeHelp" min="18" max="90" />
+            </div>
+            
+            <div class="parameter-group">
+              <div class="d-flex align-items-center">
+                <label class="compact-label me-1" data-key="label_legalRetirementAge" for="legalRetirementAge" id="legalRetirementAgeLabel"></label>
+                <div class="tooltip-wrapper d-inline-block">
+                  <span class="tooltip-icon">ⓘ</span>
+                  <div class="tooltip-content" data-key="tooltip_legalRetirementAge"></div>
+                </div>
+              </div>
+              <input type="number" class="form-control compact-input" id="legalRetirementAge" value="67" 
+                     aria-labelledby="legalRetirementAgeLabel" min="50" max="100" />
+            </div>
+            
+            <div class="parameter-group">
+              <div class="d-flex align-items-center">
+                <label class="compact-label me-1" data-key="label_fixedMonthlyPension" for="fixedMonthlyPension" id="fixedMonthlyPensionLabel"></label>
+                <div class="tooltip-wrapper d-inline-block">
+                  <span class="tooltip-icon">ⓘ</span>
+                  <div class="tooltip-content" data-key="tooltip_fixedMonthlyPension"></div>
+                </div>
+              </div>
+              <input type="number" class="form-control compact-input" id="fixedMonthlyPension" value="5000" 
+                     aria-labelledby="fixedMonthlyPensionLabel" min="0" />
+            </div>
+            
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_currentAssets" for="currentAssets" id="currentAssetsLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_currentAssets"></div>
+              </div>
+              <input type="number" class="form-control compact-input" id="currentAssets" value="600000" 
+                     aria-labelledby="currentAssetsLabel" min="0" />
+            </div>
+            
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_capitalGainsTaxRate" for="capitalGainsTaxRate" id="capitalGainsTaxRateLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_capitalGainsTaxRate"></div>
+              </div>
+              <input type="number" step="0.1" class="form-control compact-input" id="capitalGainsTaxRate" value="26.25" 
+                     aria-labelledby="capitalGainsTaxRateLabel" min="0" max="100" />
+            </div>
+            
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_annualSavings" for="annualSavings" id="annualSavingsLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_annualSavings"></div>
+              </div>
+              <input type="number" class="form-control compact-input" id="annualSavings" value="18000" 
+                     aria-labelledby="annualSavingsLabel" min="0" />
+            </div>
+            
+            <hr class="my-1" />
+            
+            <!-- Variable Parameters -->
+            <p class="mb-1"><strong data-key="section_variable">Variable</strong></p>
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_retirementAge" for="retirementAge" id="retirementAgeLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_retirementAge"></div>
+              </div>
+              <input type="number" class="form-control compact-input" id="retirementAge" value="60" 
+                     aria-labelledby="retirementAgeLabel" min="18" max="100" />
+            </div>
+            
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_averageROI" for="averageROI" id="averageROILabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_averageROI"></div>
+              </div>
+              <input type="number" step="0.1" class="form-control compact-input" id="averageROI" value="12" 
+                     aria-labelledby="averageROILabel" min="-5" max="30" />
+            </div>
+            
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_averageInflation" for="averageInflation" id="averageInflationLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_averageInflation"></div>
+              </div>
+              <input type="number" step="0.1" class="form-control compact-input" id="averageInflation" value="2.5" 
+                     aria-labelledby="averageInflationLabel" min="0" max="20" />
+            </div>
+            
+            <hr class="my-1" />
+            
+            <!-- Volatility Parameters -->
+            <p class="mb-1"><strong data-key="section_volatility">Volatility</strong></p>
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_ROI_volatility" for="ROI_volatility" id="ROI_volatilityLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_ROI_volatility"></div>
+              </div>
+              <input type="number" step="0.001" class="form-control compact-input" id="ROI_volatility" value="0.15" 
+                     aria-labelledby="ROI_volatilityLabel" min="0" max="1" />
+            </div>
+            
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_inflation_volatility" for="inflation_volatility" id="inflation_volatilityLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_inflation_volatility"></div>
+              </div>
+              <input type="number" step="0.001" class="form-control compact-input" id="inflation_volatility" value="0.01" 
+                     aria-labelledby="inflation_volatilityLabel" min="0" max="1" />
+            </div>
+            
+            <hr class="my-1" />
+            
+            <!-- Monthly Expenses -->
+            <p class="mb-1"><strong data-key="section_monthlyExpenses">Monthly Expenses (€)</strong></p>
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_expenseHealth" for="expenseHealth" id="expenseHealthLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_expenseHealth"></div>
+              </div>
+              <input type="number" class="form-control compact-input" id="expenseHealth" value="1500" 
+                     aria-labelledby="expenseHealthLabel" min="0" />
+            </div>
+            
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_expenseFood" for="expenseFood" id="expenseFoodLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_expenseFood"></div>
+              </div>
+              <input type="number" class="form-control compact-input" id="expenseFood" value="1500" 
+                     aria-labelledby="expenseFoodLabel" min="0" />
+            </div>
+            
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_expenseEntertainment" for="expenseEntertainment" id="expenseEntertainmentLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_expenseEntertainment"></div>
+              </div>
+              <input type="number" class="form-control compact-input" id="expenseEntertainment" value="500" 
+                     aria-labelledby="expenseEntertainmentLabel" min="0" />
+            </div>
+            
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_expenseShopping" for="expenseShopping" id="expenseShoppingLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_expenseShopping"></div>
+              </div>
+              <input type="number" class="form-control compact-input" id="expenseShopping" value="500" 
+                     aria-labelledby="expenseShoppingLabel" min="0" />
+            </div>
+            
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_expenseUtilities" for="expenseUtilities" id="expenseUtilitiesLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_expenseUtilities"></div>
+              </div>
+              <input type="number" class="form-control compact-input" id="expenseUtilities" value="500" 
+                     aria-labelledby="expenseUtilitiesLabel" min="0" />
+            </div>
+            
+            <!-- Annual Expenses -->
+            <p class="mb-1 mt-2"><strong data-key="section_annualExpenses">Annual Expenses (€)</strong></p>
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_expenseVacations" for="expenseVacations" id="expenseVacationsLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_expenseVacations"></div>
+              </div>
+              <input type="number" class="form-control compact-input" id="expenseVacations" value="12000" 
+                     aria-labelledby="expenseVacationsLabel" min="0" />
+            </div>
+            
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_expenseRepairs" for="expenseRepairs" id="expenseRepairsLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_expenseRepairs"></div>
+              </div>
+              <input type="number" class="form-control compact-input" id="expenseRepairs" value="3000" 
+                     aria-labelledby="expenseRepairsLabel" min="0" />
+            </div>
+            
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_expenseCarMaintenance" for="expenseCarMaintenance" id="expenseCarMaintenanceLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_expenseCarMaintenance"></div>
+              </div>
+              <input type="number" class="form-control compact-input" id="expenseCarMaintenance" value="3000" 
+                     aria-labelledby="expenseCarMaintenanceLabel" min="0" />
+            </div>
+            
+            <hr class="my-1" />
+            
+            <!-- Simulation Control -->
+            <div class="parameter-group">
+              <div class="tooltip-wrapper">
+                <label class="compact-label" data-key="label_simulationRuns" for="simulationRuns" id="simulationRunsLabel"></label>
+                <span class="tooltip-icon">ⓘ</span>
+                <div class="tooltip-content" data-key="tooltip_simulationRuns"></div>
+              </div>
+              <input type="number" class="form-control compact-input" id="simulationRuns" value="10000" 
+                     aria-labelledby="simulationRunsLabel" min="100" max="50000" />
+            </div>
+            
+            <hr class="my-1" />
+            
+            <!-- Scenarios Section (New) -->
+            <div id="scenariosSection">
+              <p class="mb-1"><strong data-key="section_scenarios">Scenarios</strong></p>
+              <div id="scenariosList" class="mb-2">
+                <div class="text-center text-muted" id="noScenariosMessage" data-key="message_noScenarios">
+                  No saved scenarios yet
+                </div>
+              </div>
+              <div class="d-flex mb-2">
+                <input type="text" class="form-control form-control-sm mr-2" id="scenarioName" 
+                     placeholder="Scenario name" data-key="placeholder_scenarioName">
+                <button id="saveScenarioBtn" class="btn btn-primary btn-sm" data-key="btn_saveScenario" style="white-space: nowrap;">
+                  Save Scenario
+                </button>
+              </div>
+            </div>
+            
+            <hr class="my-1" />
+            
+            <!-- Save/Load Section -->
+            <p class="mb-1"><strong data-key="label_saveLoad"></strong></p>
+            <textarea id="paramsJSON" class="form-control compact-input" rows="3" placeholder=""></textarea>
+            <div class="mt-1">
+              <button id="saveParamsBtn" class="btn btn-primary btn-sm" data-key="btn_save">Save</button>
+              <button id="loadParamsBtn" class="btn btn-secondary btn-sm" data-key="btn_load">Load</button>
+            </div>
+            <!-- Export PDF Button -->
+            <div class="mt-1">
+              <button id="exportPdfBtn" class="btn btn-success btn-sm" data-key="btn_exportPdf">Export PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Chart Section (9 columns) -->
+      <div class="col-md-9">
+        <!-- Results Summary (New) -->
+        <div class="card mb-2">
+          <div class="card-header py-1">
+            <strong data-key="section_summary">Summary</strong>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4">
+                <div class="card bg-light mb-2 summary-card">
+                  <div class="card-body py-2 text-center">
+                    <h5 data-key="label_successRate">Success Rate</h5>
+                    <h3 id="successRateValue">--</h3>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card bg-light mb-2 summary-card">
+                  <div class="card-body py-2 text-center">
+                    <h5 data-key="label_medianAssets">Median Final Assets</h5>
+                    <h3 id="medianAssetsValue">--</h3>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-4">
+                <div class="card bg-light mb-2 summary-card">
+                  <div class="card-body py-2 text-center">
+                    <h5 data-key="label_worstCase">10% Worst Case</h5>
+                    <h3 id="worstCaseValue">--</h3>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Chart Card -->
+        <div class="card">
+          <div class="card-header py-1">
+            <strong data-key="section_results">Simulation Results</strong>
+          </div>
+          <div class="card-body py-2">
+            <div class="chart-container position-relative">
+              <div id="chartLoadingOverlay" class="loading-overlay d-none">
+                <div class="spinner"></div>
+              </div>
+              <canvas id="simulationChart"></canvas>
+              <!-- Accessibility: Chart description for screen readers -->
+              <div id="chartDescription" class="sr-only" aria-live="polite"></div>
+            </div>
+            <hr />
+            <p id="successProbability" class="lead small"></p>
+            <p id="simulationExplanation" class="text-muted small"></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Web Worker Script (separate file in production) -->
+  <script id="workerScript" type="text/worker">
+    // Worker script for simulation calculations
+    
+    // Generates a normally distributed random number using the Box-Muller transform.
+    function randomNormal(mean, std) {
+      let u = 0, v = 0;
+      while (u === 0) u = Math.random();
+      while (v === 0) v = Math.random();
+      return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v) * std + mean;
+    }
+    
+    // Run the Monte Carlo simulation (accumulation and distribution phases)
+    function runSimulation(params) {
+      let ages = [];
+      for (let age = params.currentAge; age <= params.simulationEndAge; age++) {
+        ages.push(age);
+      }
+      let simulations = [];
+      let successCount = 0;
+      for (let i = 0; i < params.simulationRuns; i++) {
+        let assets = [];
+        let spendings = [];
+        let asset = params.currentAssets;
+        let failed = false;
+        // Accumulation phase: spending = 0
+        for (let age = params.currentAge; age < params.intendedRetirementAge; age++) {
+          let r = randomNormal(params.averageROI, params.ROI_volatility);
+          let effectiveR = r > 0 ? r * (1 - params.capitalGainsTaxRate) : r;
+          asset = asset * (1 + effectiveR) + params.annualSavings;
+          assets.push(asset);
+          spendings.push(0);
+        }
+        // Distribution phase
+        let baseMonthlyExpenses = params.monthlyExpenses.health + params.monthlyExpenses.food +
+                                 params.monthlyExpenses.entertainment + params.monthlyExpenses.shopping +
+                                 params.monthlyExpenses.utilities;
+        let baseAnnualExpenses = params.annualExpenses.vacations + params.annualExpenses.repairs +
+                               params.annualExpenses.carMaintenance;
+        let annualExpense = baseMonthlyExpenses * 12 + baseAnnualExpenses;
+        for (let age = params.intendedRetirementAge; age <= params.simulationEndAge; age++) {
+          let income = (age >= params.legalRetirementAge) ? params.fixedMonthlyPension * 12 : 0;
+          let r = randomNormal(params.averageROI, params.ROI_volatility);
+          let effectiveR = r > 0 ? r * (1 - params.capitalGainsTaxRate) : r;
+          asset = asset * (1 + effectiveR) + income - annualExpense;
+          assets.push(asset);
+          spendings.push(annualExpense / 12);
+          let inflationRate = randomNormal(params.averageInflation, params.inflation_volatility);
+          annualExpense = annualExpense * (1 + inflationRate);
+          if (asset < 0 && !failed) {
+            failed = true;
+          }
+        }
+        if (!failed) successCount++;
+        simulations.push({ assets: assets, spendings: spendings });
+      }
+      return {
+        ages: ages,
+        simulations: simulations,
+        successProbability: successCount / params.simulationRuns
+      };
+    }
+    
+    // Calculate percentiles (10th, median, 90th) for a given property
+    function calculatePercentilesForProperty(simulationResults, propName) {
+      let numYears = simulationResults.ages.length;
+      let median = [];
+      let p10 = [];
+      let p90 = [];
+      for (let j = 0; j < numYears; j++) {
+        let values = simulationResults.simulations
+                      .map(run => run[propName][j])
+                      .filter(v => v !== null);
+        if (values.length === 0) {
+          median.push(null);
+          p10.push(null);
+          p90.push(null);
+          continue;
+        }
+        values.sort((a, b) => a - b);
+        let mid = Math.floor(values.length / 2);
+        let medVal = (values.length % 2 !== 0) ? values[mid] : (values[mid - 1] + values[mid]) / 2;
+        median.push(medVal);
+        let idx10 = Math.floor(0.1 * values.length);
+        let idx90 = Math.floor(0.9 * values.length);
+        p10.push(values[idx10]);
+        p90.push(values[idx90]);
+      }
+      return { median: median, p10: p10, p90: p90 };
+    }
+    
+    // Listen for messages from the main thread
+    self.addEventListener('message', function(e) {
+      const params = e.data;
+      const result = runSimulation(params);
+      
+      // Calculate asset percentiles
+      const assetPercentiles = calculatePercentilesForProperty(result, "assets");
+      const spendingPercentiles = calculatePercentilesForProperty(result, "spendings");
+      
+      // Add to result
+      result.assetPercentiles = assetPercentiles;
+      result.spendingPercentiles = spendingPercentiles;
+      
+      // Send back to main thread
+      self.postMessage(result);
+    });
+  </script>
+
+  <!-- Main Application Script -->
+  <script>
+    // Create a Blob URL for the worker script
+    const workerBlob = new Blob([document.querySelector('#workerScript').textContent], 
+                              { type: 'application/javascript' });
+    const workerBlobURL = URL.createObjectURL(workerBlob);
+    
+    // Main application module
+    const RetirementApp = (function() {
+      "use strict";
+      
+      // Private variables
+      let currentLanguage = "en";
+      let assetChart = null;
+      let isSimulationRunning = false;
+      let simulationWorker = null;
+      
+      // Accessible high-contrast color palette
+      const accessibleColors = [
+        '#003f5c', // Dark blue
+        '#bc5090', // Purple
+        '#ff6361', // Coral
+        '#ffa600', // Yellow
+        '#58508d', // Indigo
+        '#007580'  // Teal
+      ];
+      
+      // Translation dictionary
+      const translations = {
+        en: {
+          title_main: "Early Retirement Monte Carlo Simulation",
+          languageLabel: "Language",
+          theme_toggle: "Toggle Dark Mode",
+          section_parameters: "Parameters",
+          section_fixed: "Fixed",
+          label_currentAge: "Current Age",
+          tooltip_currentAge: "Your current age (e.g., 54). Determines the starting point of the simulation.",
+          label_legalRetirementAge: "Legal Retirement Age",
+          tooltip_legalRetirementAge: "The age at which you begin receiving your fixed pension.",
+          label_fixedMonthlyPension: "Monthly Pension (€)",
+          tooltip_fixedMonthlyPension: "Your fixed monthly pension, starting at the legal retirement age.",
+          label_currentAssets: "Current Assets (€)",
+          tooltip_currentAssets: "The amount of assets and savings you currently have.",
+          label_capitalGainsTaxRate: "Capital Gains Tax Rate (%)",
+          tooltip_capitalGainsTaxRate: "The tax rate applied to positive investment returns.",
+          label_annualSavings: "Annual Savings (€)",
+          tooltip_annualSavings: "The amount you save each year while working.",
+          section_variable: "Variable",
+          label_retirementAge: "Intended Retirement Age",
+          tooltip_retirementAge: "The age you plan to retire. Early retirement means assets must cover living costs until pension starts.",
+          label_averageROI: "Average ROI (%)",
+          tooltip_averageROI: "The expected annual return on your investments.",
+          label_averageInflation: "Average Inflation (%)",
+          tooltip_averageInflation: "The expected annual inflation rate affecting your expenses.",
+          section_volatility: "Volatility",
+          label_ROI_volatility: "ROI Volatility",
+          tooltip_ROI_volatility: "Standard deviation for annual ROI fluctuations (e.g., 0.02 for 2%).",
+          label_inflation_volatility: "Inflation Volatility",
+          tooltip_inflation_volatility: "Standard deviation for annual inflation fluctuations (e.g., 0.005 for 0.5%).",
+          section_monthlyExpenses: "Monthly Expenses (€)",
+          label_expenseHealth: "Health",
+          tooltip_expenseHealth: "Monthly spending on health-related costs.",
+          label_expenseFood: "Food",
+          tooltip_expenseFood: "Monthly spending on food.",
+          label_expenseEntertainment: "Entertainment",
+          tooltip_expenseEntertainment: "Monthly spending on entertainment.",
+          label_expenseShopping: "Shopping",
+          tooltip_expenseShopping: "Monthly spending on shopping.",
+          label_expenseUtilities: "Utilities",
+          tooltip_expenseUtilities: "Monthly spending on utilities.",
+          section_annualExpenses: "Annual Expenses (€)",
+          label_expenseVacations: "Vacations",
+          tooltip_expenseVacations: "Annual spending on vacations.",
+          label_expenseRepairs: "Repairs",
+          tooltip_expenseRepairs: "Annual spending on repairs.",
+          label_expenseCarMaintenance: "Car Maintenance",
+          tooltip_expenseCarMaintenance: "Annual spending on car maintenance.",
+          label_simulationRuns: "Simulations",
+          tooltip_simulationRuns: "The number of simulation runs to perform.",
+          label_saveLoad: "Save/Load Parameters",
+          tooltip_saveLoad: "Save or load your simulation parameters.",
+          btn_save: "Save",
+          btn_load: "Load",
+          btn_exportPdf: "Export PDF",
+          section_results: "Simulation Results",
+          successProbability: "Success Probability",
+          explanation_simulation: "Simulation Explanation: The simulation has two phases. In the accumulation phase (from your current age until your intended retirement), your assets grow with savings and investment returns. In the distribution phase (from retirement until age 90), your assets cover your living expenses—which increase with inflation—until your pension begins at the legal retirement age. The success probability shows the percentage of simulations in which your assets never drop below zero.",
+          section_summary: "Summary",
+          label_successRate: "Success Rate",
+          label_medianAssets: "Median Final Assets",
+          label_worstCase: "10% Worst Case",
+          section_scenarios: "Scenarios",
+          message_noScenarios: "No saved scenarios yet",
+          placeholder_scenarioName: "Scenario name",
+          btn_saveScenario: "Save Scenario",
+          btn_compareScenarios: "Compare",
+          btn_loadScenario: "Load",
+          btn_deleteScenario: "Delete"
+        },
+        de: {
+          title_main: "Monte-Carlo-Simulation für Frühverrentung",
+          languageLabel: "Sprache",
+          theme_toggle: "Dunkelmodus",
+          section_parameters: "Parameter",
+          section_fixed: "Fest",
+          label_currentAge: "Aktuelles Alter",
+          tooltip_currentAge: "Ihr aktuelles Alter (z. B. 54). Bestimmt den Ausgangspunkt der Simulation.",
+          label_legalRetirementAge: "Gesetzliches Rentenalter",
+          tooltip_legalRetirementAge: "Das Alter, ab dem Sie Ihre feste Rente erhalten.",
+          label_fixedMonthlyPension: "Monatliche Rente (€)",
+          tooltip_fixedMonthlyPension: "Ihre feste monatliche Rente, die ab dem gesetzlichen Rentenalter beginnt.",
+          label_currentAssets: "Aktuelle Vermögenswerte (€)",
+          tooltip_currentAssets: "Der Betrag an Ersparnissen und Vermögen, den Sie derzeit besitzen.",
+          label_capitalGainsTaxRate: "Kapitalertragssteuer (%)",
+          tooltip_capitalGainsTaxRate: "Der Steuersatz auf positive Anlagegewinne.",
+          label_annualSavings: "Jährliche Ersparnisse (€)",
+          tooltip_annualSavings: "Der Betrag, den Sie jährlich während Ihrer Erwerbstätigkeit sparen.",
+          section_variable: "Variabel",
+          label_retirementAge: "Geplantes Rentenalter",
+          tooltip_retirementAge: "Das Alter, in dem Sie in den Ruhestand gehen möchten. Bei Frühverrentung müssen die Vermögenswerte die Lebenshaltungskosten bis zum Rentenbeginn decken.",
+          label_averageROI: "Durchschnittliche Rendite (%)",
+          tooltip_averageROI: "Die erwartete jährliche Rendite Ihrer Investitionen.",
+          label_averageInflation: "Durchschnittliche Inflation (%)",
+          tooltip_averageInflation: "Die erwartete jährliche Inflationsrate, die Ihre Ausgaben beeinflusst.",
+          section_volatility: "Volatilität",
+          label_ROI_volatility: "Rendite-Volatilität",
+          tooltip_ROI_volatility: "Standardabweichung der jährlichen Renditeschwankungen (z. B. 0,02 für 2%).",
+          label_inflation_volatility: "Inflations-Volatilität",
+          tooltip_inflation_volatility: "Standardabweichung der jährlichen Inflationsschwankungen (z. B. 0,005 für 0,5%).",
+          section_monthlyExpenses: "Monatliche Ausgaben (€)",
+          label_expenseHealth: "Gesundheit",
+          tooltip_expenseHealth: "Monatliche Ausgaben für Gesundheitskosten.",
+          label_expenseFood: "Lebensmittel",
+          tooltip_expenseFood: "Monatliche Ausgaben für Lebensmittel.",
+          label_expenseEntertainment: "Unterhaltung",
+          tooltip_expenseEntertainment: "Monatliche Ausgaben für Unterhaltung.",
+          label_expenseShopping: "Einkaufen",
+          tooltip_expenseShopping: "Monatliche Ausgaben für Einkäufe.",
+          label_expenseUtilities: "Nebenkosten",
+          tooltip_expenseUtilities: "Monatliche Ausgaben für Nebenkosten.",
+          section_annualExpenses: "Jährliche Ausgaben (€)",
+          label_expenseVacations: "Urlaub",
+          tooltip_expenseVacations: "Jährliche Ausgaben für Urlaub.",
+          label_expenseRepairs: "Reparaturen",
+          tooltip_expenseRepairs: "Jährliche Ausgaben für Reparaturen.",
+          label_expenseCarMaintenance: "Autopflege",
+          tooltip_expenseCarMaintenance: "Jährliche Ausgaben für Autopflege.",
+          label_simulationRuns: "Simulationen",
+          tooltip_simulationRuns: "Die Anzahl der durchzuführenden Simulationen.",
+          label_saveLoad: "Parameter speichern/laden",
+          tooltip_saveLoad: "Speichern oder Laden Ihrer Simulationsparameter.",
+          btn_save: "Speichern",
+          btn_load: "Laden",
+          btn_exportPdf: "PDF exportieren",
+          section_results: "Simulationsergebnisse",
+          successProbability: "Erfolgswahrscheinlichkeit",
+          explanation_simulation: "Simulations-Erklärung: Die Simulation modelliert zwei Phasen. In der Ansparphase (von Ihrem aktuellen Alter bis zum geplanten Rentenalter) wachsen Ihre Vermögenswerte durch Ersparnisse und Renditen. In der Auszahlungsphase (vom Rentenbeginn bis zum Alter 90) decken Ihre Vermögenswerte Ihre Lebenshaltungskosten – die durch Inflation steigen – bis Ihre Rente einsetzt. Die Erfolgswahrscheinlichkeit gibt den Prozentsatz der Simulationen an, bei denen Ihre Vermögenswerte nie unter null fallen.",
+          section_summary: "Zusammenfassung",
+          label_successRate: "Erfolgsrate",
+          label_medianAssets: "Median Endvermögen",
+          label_worstCase: "10% schlechtester Fall",
+          section_scenarios: "Szenarien",
+          message_noScenarios: "Noch keine gespeicherten Szenarien",
+          placeholder_scenarioName: "Szenarioname",
+          btn_saveScenario: "Szenario speichern",
+          btn_compareScenarios: "Vergleichen",
+          btn_loadScenario: "Laden",
+          btn_deleteScenario: "Löschen"
+        }
+      };
+      
+      // Parse a number input (replace comma with dot if needed)
+      function parseNum(id) {
+        let val = document.getElementById(id).value;
+        if (currentLanguage === "de") {
+          val = val.replace(",", ".");
+        }
+        return parseFloat(val);
+      }
+      
+      // Helper: Debounce function to limit rapid-fire function calls
+      function debounce(func, wait) {
+        let timeout;
+        return function(...args) {
+          const context = this;
+          clearTimeout(timeout);
+          timeout = setTimeout(() => func.apply(context, args), wait);
+        };
+      }
+      
+      // Show notification
+      function showNotification(type, message) {
+        const alertElement = document.createElement("div");
+        alertElement.className = `alert alert-${type} alert-dismissible fade show`;
+        alertElement.role = "alert";
+        alertElement.innerHTML = `
+          ${message}
+          <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        `;
+        
+        const container = document.getElementById("notificationArea");
+        container.appendChild(alertElement);
+        
+        // Auto dismiss after 5 seconds
+        setTimeout(() => {
+          alertElement.classList.remove("show");
+          setTimeout(() => alertElement.remove(), 150);
+        }, 5000);
+      }
+      
+      // Input validation function
+      function validateInputs() {
+        const currentAge = parseNum("currentAge");
+        const retirementAge = parseNum("retirementAge");
+        const legalRetirementAge = parseNum("legalRetirementAge");
+        const simulationEndAge = 90;
+        
+        let isValid = true;
+        let errorMessages = [];
+        
+        // Age validations
+        if (isNaN(currentAge) || currentAge < 18 || currentAge > 80) {
+          document.getElementById("currentAge").classList.add("is-invalid");
+          errorMessages.push("Current age must be between 18 and 80");
+          isValid = false;
+        } else {
+          document.getElementById("currentAge").classList.remove("is-invalid");
+        }
+        
+        if (retirementAge <= currentAge) {
+          document.getElementById("retirementAge").classList.add("is-invalid");
+          errorMessages.push("Retirement age must be greater than current age");
+          isValid = false;
+        } else {
+          document.getElementById("retirementAge").classList.remove("is-invalid");
+        }
+        
+        if (legalRetirementAge < retirementAge) {
+          document.getElementById("legalRetirementAge").classList.add("is-invalid");
+          errorMessages.push("Warning: Legal retirement age is before your planned retirement");
+        } else {
+          document.getElementById("legalRetirementAge").classList.remove("is-invalid");
+        }
+        
+        // Financial validations
+        const roi = parseNum("averageROI");
+        if (isNaN(roi) || roi < -5 || roi > 30) {
+          document.getElementById("averageROI").classList.add("is-invalid");
+          errorMessages.push("ROI should be between -5% and 30%");
+          isValid = false;
+        } else {
+          document.getElementById("averageROI").classList.remove("is-invalid");
+        }
+        
+        const inflation = parseNum("averageInflation");
+        if (isNaN(inflation) || inflation < 0 || inflation > 20) {
+          document.getElementById("averageInflation").classList.add("is-invalid");
+          errorMessages.push("Inflation should be between 0% and 20%");
+          isValid = false;
+        } else {
+          document.getElementById("averageInflation").classList.remove("is-invalid");
+        }
+        
+        // Display error messages if any
+        const errorContainer = document.getElementById("validationErrors");
+        if (errorMessages.length > 0) {
+          errorContainer.innerHTML = errorMessages.map(msg => `<div class="alert alert-danger">${msg}</div>`).join("");
+          errorContainer.classList.remove("d-none");
+        } else {
+          errorContainer.classList.add("d-none");
+        }
+        
+        return isValid;
+      }
+      
+      // Get parameters from the UI
+      function getParameters() {
+        return {
+          currentAge: parseNum("currentAge"),
+          legalRetirementAge: parseNum("legalRetirementAge"),
+          fixedMonthlyPension: parseNum("fixedMonthlyPension"),
+          currentAssets: parseNum("currentAssets"),
+          capitalGainsTaxRate: parseNum("capitalGainsTaxRate") / 100,
+          annualSavings: parseNum("annualSavings"),
+          intendedRetirementAge: parseNum("retirementAge"),
+          averageROI: parseNum("averageROI") / 100,
+          averageInflation: parseNum("averageInflation") / 100,
+          ROI_volatility: parseNum("ROI_volatility") || 0.02,
+          inflation_volatility: parseNum("inflation_volatility") || 0.005,
+          monthlyExpenses: {
+            health: parseNum("expenseHealth"),
+            food: parseNum("expenseFood"),
+            entertainment: parseNum("expenseEntertainment"),
+            shopping: parseNum("expenseShopping"),
+            utilities: parseNum("expenseUtilities")
+          },
+          annualExpenses: {
+            vacations: parseNum("expenseVacations"),
+            repairs: parseNum("expenseRepairs"),
+            carMaintenance: parseNum("expenseCarMaintenance")
+          },
+          simulationRuns: parseNum("simulationRuns"),
+          simulationEndAge: 90
+        };
+      }
+      
+      // Update UI inputs from a parameters object
+      function loadParametersFromObject(params) {
+        document.getElementById("currentAge").value = params.currentAge;
+        document.getElementById("legalRetirementAge").value = params.legalRetirementAge;
+        document.getElementById("fixedMonthlyPension").value = params.fixedMonthlyPension;
+        document.getElementById("currentAssets").value = params.currentAssets;
+        document.getElementById("capitalGainsTaxRate").value = params.capitalGainsTaxRate * 100;
+        document.getElementById("annualSavings").value = params.annualSavings;
+        document.getElementById("retirementAge").value = params.intendedRetirementAge;
+        document.getElementById("averageROI").value = params.averageROI * 100;
+        document.getElementById("averageInflation").value = params.averageInflation * 100;
+        document.getElementById("ROI_volatility").value = params.ROI_volatility;
+        document.getElementById("inflation_volatility").value = params.inflation_volatility;
+        document.getElementById("expenseHealth").value = params.monthlyExpenses.health;
+        document.getElementById("expenseFood").value = params.monthlyExpenses.food;
+        document.getElementById("expenseEntertainment").value = params.monthlyExpenses.entertainment;
+        document.getElementById("expenseShopping").value = params.monthlyExpenses.shopping;
+        document.getElementById("expenseUtilities").value = params.monthlyExpenses.utilities;
+        document.getElementById("expenseVacations").value = params.annualExpenses.vacations;
+        document.getElementById("expenseRepairs").value = params.annualExpenses.repairs;
+        document.getElementById("expenseCarMaintenance").value = params.annualExpenses.carMaintenance;
+        document.getElementById("simulationRuns").value = params.simulationRuns;
+      }
+      
+      // Update the chart with simulation results
+      function updateCombinedChart(simulationResults) {
+        let ages = simulationResults.ages;
+        let assetPercentiles = simulationResults.assetPercentiles;
+        let spendingPercentiles = simulationResults.spendingPercentiles;
+        
+        let ctx = document.getElementById("simulationChart").getContext("2d");
+        let data = {
+          labels: ages,
+          datasets: [
+            {
+              label: translations[currentLanguage].successProbability + " (" + "Assets 10th" + ")",
+              data: assetPercentiles.p10,
+              borderColor: accessibleColors[0],
+              fill: false,
+              yAxisID: "y-axis-assets"
+            },
+            {
+              label: "Assets Median",
+              data: assetPercentiles.median,
+              borderColor: accessibleColors[1],
+              fill: false,
+              yAxisID: "y-axis-assets"
+            },
+            {
+              label: "Assets 90th",
+              data: assetPercentiles.p90,
+              borderColor: accessibleColors[2],
+              fill: false,
+              yAxisID: "y-axis-assets"
+            },
+            {
+              type: 'bar',
+              label: "Spending 10th",
+              data: spendingPercentiles.p10,
+              backgroundColor: accessibleColors[3] + '80', // 50% transparency
+              yAxisID: "y-axis-spending"
+            },
+            {
+              type: 'bar',
+              label: "Spending Median",
+              data: spendingPercentiles.median,
+              backgroundColor: accessibleColors[4] + '80', // 50% transparency
+              yAxisID: "y-axis-spending"
+            },
+            {
+              type: 'bar',
+              label: "Spending 90th",
+              data: spendingPercentiles.p90,
+              backgroundColor: accessibleColors[5] + '80', // 50% transparency
+              yAxisID: "y-axis-spending"
+            }
+          ]
+        };
+        
+        if (assetChart) {
+          assetChart.data = data;
+          assetChart.update();
+        } else {
+          assetChart = new Chart(ctx, {
+            type: "line",
+            data: data,
+            options: {
+              responsive: true,
+              title: {
+                display: true,
+                text: translations[currentLanguage].title_main
+              },
+              scales: {
+                xAxes: [{
+                  scaleLabel: { display: true, labelString: "Age" }
+                }],
+                yAxes: [{
+                  id: "y-axis-assets",
+                  type: "linear",
+                  position: "left",
+                  scaleLabel: { display: true, labelString: "Asset Value (€)" },
+                  ticks: {
+                    callback: function (value) { return "€" + value.toLocaleString(); }
+                  }
+                }, {
+                  id: "y-axis-spending",
+                  type: "linear",
+                  position: "right", // spending axis on the right
+                  scaleLabel: { display: true, labelString: "Monthly Spending (€)" },
+                  ticks: {
+                    callback: function (value) { return "€" + value.toLocaleString(); }
+                  },
+                  gridLines: { drawOnChartArea: false }
+                }]
+              },
+              tooltips: {
+                callbacks: {
+                  label: function(tooltipItem, data) {
+                    let label = data.datasets[tooltipItem.datasetIndex].label || "";
+                    return label + ": €" + Number(tooltipItem.yLabel).toLocaleString();
+                  }
+                }
+              }
+            }
+          });
+        }
+        
+        // Update the chart description for screen readers
+        updateChartDescription(simulationResults);
+      }
+      
+      // Update the chart description for accessibility
+      function updateChartDescription(simulationResults) {
+        const successRate = (simulationResults.successProbability * 100).toFixed(1);
+        const ages = simulationResults.ages;
+        const assetPercentiles = simulationResults.assetPercentiles;
+        
+        // Create a text description of the chart
+        let description = `Monte Carlo simulation results with ${successRate}% success rate. `;
+        description += `The simulation runs from age ${ages[0]} to ${ages[ages.length - 1]}. `;
+        description += `Median final assets: €${Math.round(assetPercentiles.median[assetPercentiles.median.length - 1]).toLocaleString()}. `;
+        description += `10th percentile final assets: €${Math.round(assetPercentiles.p10[assetPercentiles.p10.length - 1]).toLocaleString()}. `;
+        description += `90th percentile final assets: €${Math.round(assetPercentiles.p90[assetPercentiles.p90.length - 1]).toLocaleString()}.`;
+        
+        document.getElementById('chartDescription').textContent = description;
+      }
+      
+      // Update summary cards with simulation results
+      function updateSummaryCards(simulationResults) {
+        const successRate = (simulationResults.successProbability * 100).toFixed(1);
+        const assetPercentiles = simulationResults.assetPercentiles;
+        const lastIndex = assetPercentiles.median.length - 1;
+        
+                  // Update success rate with formatting
+        const successRateElement = document.getElementById('successRateValue');
+        if (successRateElement) {
+          successRateElement.textContent = `${successRate}%`;
+          
+          // Set color based on success rate
+          if (successRate >= 80) {
+            successRateElement.className = 'text-success';
+          } else if (successRate >= 50) {
+            successRateElement.className = 'text-warning';
+          } else {
+            successRateElement.className = 'text-danger';
+          }
+        }
+        
+        // Update median final assets
+        const medianFinalAssets = Math.round(assetPercentiles.median[lastIndex]);
+        const medianElement = document.getElementById('medianAssetsValue');
+        if (medianElement) {
+          medianElement.textContent = `€${medianFinalAssets.toLocaleString()}`;
+        }
+        
+        // Update worst case (10th percentile) final assets
+        const worstCaseFinalAssets = Math.round(assetPercentiles.p10[lastIndex]);
+        const worstCaseElement = document.getElementById('worstCaseValue');
+        if (worstCaseElement) {
+          worstCaseElement.textContent = `€${worstCaseFinalAssets.toLocaleString()}`;
+          
+          // Add color indicator for worst case
+          if (worstCaseFinalAssets <= 0) {
+            worstCaseElement.className = 'text-danger';
+          } else {
+            worstCaseElement.className = '';
+          }
+        }
+        
+        // Set color based on success rate
+        const rateElement = document.getElementById('successRateValue');
+        if (successRate >= 80) {
+          rateElement.className = 'text-success';
+        } else if (successRate >= 50) {
+          rateElement.className = 'text-warning';
+        } else {
+          rateElement.className = 'text-danger';
+        }
+      }
+      
+      // Update simulation using Web Worker
+      function updateSimulation() {
+        // Validate inputs first
+        if (!validateInputs()) {
+          return;
+        }
+        
+        // Get parameters
+        const params = getParameters();
+        
+        // Don't start a new simulation if one is already running
+        if (isSimulationRunning) {
+          return;
+        }
+        
+        // Show loading state
+        isSimulationRunning = true;
+        document.getElementById("chartLoadingOverlay").classList.remove("d-none");
+        
+        // Terminate previous worker if exists
+        if (simulationWorker) {
+          simulationWorker.terminate();
+        }
+        
+        // Create a new worker
+        simulationWorker = new Worker(workerBlobURL);
+        
+        // Set up message handler for when worker is done
+        simulationWorker.onmessage = function(e) {
+          const simulationResults = e.data;
+          
+          // Update chart
+          updateCombinedChart(simulationResults);
+          
+          // Update success probability text
+          document.getElementById("successProbability").innerText =
+            translations[currentLanguage].successProbability + ": " + 
+            (simulationResults.successProbability * 100).toFixed(1) + "%";
+          
+          // Update summary cards
+          updateSummaryCards(simulationResults);
+          
+          // Hide loading state
+          document.getElementById("chartLoadingOverlay").classList.add("d-none");
+          isSimulationRunning = false;
+        };
+        
+        // Send parameters to worker
+        simulationWorker.postMessage(params);
+      }
+      
+      // Debounced simulation update
+      const debouncedUpdateSimulation = debounce(updateSimulation, 500);
+      
+      // Theme toggle function
+      function toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const themeIcon = document.getElementById('themeIcon');
+        if (isDarkMode) {
+          themeIcon.classList.remove('fa-moon');
+          themeIcon.classList.add('fa-sun');
+          localStorage.setItem('darkMode', 'enabled');
+        } else {
+          themeIcon.classList.remove('fa-sun');
+          themeIcon.classList.add('fa-moon');
+          localStorage.setItem('darkMode', 'disabled');
+        }
+      }
+      
+      // Initialize dark mode based on saved preference
+      function initDarkMode() {
+        const darkModeSetting = localStorage.getItem('darkMode');
+        if (darkModeSetting === 'enabled') {
+          document.body.classList.add('dark-mode');
+          const themeIcon = document.getElementById('themeIcon');
+          themeIcon.classList.remove('fa-moon');
+          themeIcon.classList.add('fa-sun');
+        }
+      }
+      
+      // Update all UI text based on currentLanguage
+      function updateLanguage() {
+        document.querySelectorAll("[data-key]").forEach(el => {
+          const key = el.getAttribute("data-key");
+          if (translations[currentLanguage][key]) {
+            el.innerText = translations[currentLanguage][key];
+          }
+        });
+        
+        const inputs = document.querySelectorAll("input");
+        inputs.forEach(input => {
+          const tooltipKey = "tooltip_" + input.id;
+          if (translations[currentLanguage][tooltipKey]) {
+            input.title = translations[currentLanguage][tooltipKey];
+          }
+        });
+        
+        document.getElementById("paramsJSON").placeholder = translations[currentLanguage]["label_saveLoad"];
+        document.getElementById("simulationExplanation").innerText = translations[currentLanguage]["explanation_simulation"];
+      }
+      
+      // Safely parse JSON with error handling
+      function safeJSONParse(jsonString) {
+        try {
+          // Check if input is undefined or null
+          if (jsonString === undefined || jsonString === null) {
+            console.warn("JSON string is undefined or null");
+            return {};
+          }
+          
+          // First check if the string looks like JSON
+          if (typeof jsonString !== 'string') {
+            console.warn("Input is not a string:", typeof jsonString);
+            return {};
+          }
+          
+          // Handle empty string
+          if (jsonString.trim() === '') {
+            console.warn("JSON string is empty");
+            return {};
+          }
+          
+          // Special check for "undefined" literal string
+          if (jsonString === "undefined") {
+            console.warn("JSON string is literal 'undefined'");
+            return {};
+          }
+
+          // Check if it starts with expected characters
+          if (!jsonString.startsWith('{') && !jsonString.startsWith('[')) {
+            console.warn(`Invalid JSON format, doesn't start with { or [: ${jsonString.substring(0, 20)}...`);
+            return {};
+          }
+          
+          return JSON.parse(jsonString);
+        } catch (e) {
+          console.error("JSON parse error:", e, "for string:", jsonString);
+          showNotification("error", "Invalid JSON format - see console for details");
+          return {};
+        }
+      }
+      
+      // Save parameters to localStorage and display in the textarea
+      function saveParameters() {
+        let params = getParameters();
+        let jsonStr = JSON.stringify(params, null, 2);
+        localStorage.setItem("savedParameters", jsonStr);
+        document.getElementById("paramsJSON").value = jsonStr;
+        showNotification("success", "Parameters saved successfully");
+      }
+      
+      // Load parameters from localStorage or textarea
+      function loadSavedParameters() {
+        let jsonStr = document.getElementById("paramsJSON").value || localStorage.getItem("savedParameters");
+        if (!jsonStr) {
+          showNotification("info", "No saved parameters found");
+          return;
+        }
+        
+        try {
+          // Safely parse JSON
+          let params = safeJSONParse(jsonStr);
+          if (!params) return;
+          
+          // Validate param structure
+          const requiredFields = [
+            "currentAge", "legalRetirementAge", "intendedRetirementAge", 
+            "monthlyExpenses", "annualExpenses", "simulationRuns"
+          ];
+          
+          const missingFields = requiredFields.filter(field => !(field in params));
+          
+          if (missingFields.length > 0) {
+            showNotification("error", "Saved parameters are missing required fields");
+            return;
+          }
+          
+          // Load parameters if valid
+          loadParametersFromObject(params);
+          updateSimulation();
+          document.getElementById("paramsJSON").value = jsonStr;
+          showNotification("success", "Parameters loaded successfully");
+        } catch(e) {
+          console.error("Error loading parameters:", e);
+          showNotification("error", "Error loading parameters: " + e.message);
+        }
+      }
+      
+      // Export PDF: Capture the main container and save to PDF with current date in filename
+      function exportPdf() {
+        try {
+          showNotification("info", "Generating PDF...");
+          
+          html2canvas(document.getElementById("mainContainer")).then(function(canvas) {
+            try {
+              let imgData = canvas.toDataURL('image/png');
+              const { jsPDF } = window.jspdf;
+              let pdf = new jsPDF('l', 'pt', 'a4');
+              let imgWidth = 841.89; // A4 width in pt
+              let pageHeight = 595.28; // A4 height in pt
+              let canvasWidth = canvas.width;
+              let canvasHeight = canvas.height;
+              let imgHeight = canvasHeight * imgWidth / canvasWidth;
+              pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+              
+              const date = new Date();
+              let filename = "retirecalc_" + date.getFullYear() + "-" +
+                String(date.getMonth()+1).padStart(2, '0') + "-" +
+                String(date.getDate()).padStart(2, '0') + ".pdf";
+              
+              pdf.save(filename);
+              showNotification("success", "PDF exported successfully");
+            } catch (error) {
+              console.error("PDF generation error:", error);
+              showNotification("error", "Failed to generate PDF: " + error.message);
+            }
+          }).catch(function(error) {
+            console.error("Canvas capture error:", error);
+            showNotification("error", "Failed to capture page: " + error.message);
+          });
+        } catch (error) {
+          console.error("PDF export error:", error);
+          showNotification("error", "PDF export failed: " + error.message);
+        }
+      }
+      
+      // Scenario management functions
+      
+      // Save current settings as a named scenario
+      function saveScenario() {
+        const scenarioName = document.getElementById('scenarioName').value.trim();
+        if (!scenarioName) {
+          showNotification('warning', 'Please enter a scenario name');
+          return;
+        }
+        
+        try {
+          // Get current parameters
+          const params = getParameters();
+          
+          // Get existing scenarios or initialize empty object
+          let scenariosStr = localStorage.getItem('retireCalcScenarios') || '{}';
+          let scenarios = {};
+          
+          try {
+            scenarios = JSON.parse(scenariosStr);
+          } catch (e) {
+            console.error("Error parsing scenarios:", e);
+            scenarios = {};
+          }
+          
+          // Add new scenario
+          scenarios[scenarioName] = {
+            params: params,
+            created: new Date().toISOString()
+          };
+          
+          // Save back to localStorage
+          localStorage.setItem('retireCalcScenarios', JSON.stringify(scenarios));
+          console.log("Saved scenarios:", scenarios);
+          
+          // Update scenarios list
+          updateScenariosList();
+          
+          // Clear input field
+          document.getElementById('scenarioName').value = '';
+          
+          showNotification('success', `Scenario "${scenarioName}" saved successfully`);
+        } catch (e) {
+          console.error("Error saving scenario:", e);
+          showNotification('error', `Failed to save scenario: ${e.message}`);
+        }
+      }
+      
+      // Update the list of saved scenarios
+      function updateScenariosList() {
+        try {
+          const scenariosList = document.getElementById('scenariosList');
+          const noScenariosMessage = document.getElementById('noScenariosMessage');
+          
+          if (!scenariosList || !noScenariosMessage) {
+            console.error("Required DOM elements not found");
+            return;
+          }
+          
+          // Get saved scenarios with error handling
+          let scenarios = {};
+          try {
+            const scenariosStr = localStorage.getItem('retireCalcScenarios');
+            console.log("Retrieved scenarios string:", scenariosStr);
+            
+            if (scenariosStr && scenariosStr !== 'undefined') {
+              scenarios = JSON.parse(scenariosStr);
+            }
+          } catch (e) {
+            console.error("Error parsing scenarios from localStorage:", e);
+            scenarios = {};
+          }
+          
+          const scenarioNames = Object.keys(scenarios);
+          console.log("Scenario names:", scenarioNames);
+          
+          if (scenarioNames.length === 0) {
+            noScenariosMessage.classList.remove('d-none');
+            scenariosList.innerHTML = '';
+            return;
+          }
+          
+          // Hide "no scenarios" message
+          noScenariosMessage.classList.add('d-none');
+          
+          // Create list of scenarios
+          let html = '<div class="list-group">';
+          
+          scenarioNames.forEach(name => {
+            try {
+              const created = new Date(scenarios[name].created || new Date());
+              const formattedDate = created.toLocaleDateString();
+              
+              html += `
+                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-2">
+                  <div>
+                    <strong>${name}</strong>
+                    <div class="small text-muted">${formattedDate}</div>
+                  </div>
+                  <div>
+                    <button class="btn btn-sm btn-outline-primary load-scenario-btn" data-scenario="${name}" 
+                            data-key="btn_loadScenario">Load</button>
+                    <button class="btn btn-sm btn-outline-danger delete-scenario-btn" data-scenario="${name}" 
+                            data-key="btn_deleteScenario">Delete</button>
+                  </div>
+                </div>
+              `;
+            } catch (e) {
+              console.error(`Error processing scenario ${name}:`, e);
+            }
+          });
+          
+          // Add comparison section if multiple scenarios exist
+          if (scenarioNames.length >= 2) {
+            html += `
+              <div class="mt-2 text-center">
+                <button id="compareScenarioBtn" class="btn btn-info btn-sm" data-key="btn_compareScenarios">
+                  Compare Scenarios
+                </button>
+              </div>
+            `;
+          }
+          
+          html += '</div>';
+          scenariosList.innerHTML = html;
+          
+          // Add event listeners
+          document.querySelectorAll('.load-scenario-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              loadScenario(this.getAttribute('data-scenario'));
+            });
+          });
+          
+          document.querySelectorAll('.delete-scenario-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+              deleteScenario(this.getAttribute('data-scenario'));
+            });
+          });
+          
+          if (scenarioNames.length >= 2) {
+            document.getElementById('compareScenarioBtn')?.addEventListener('click', showScenarioComparison);
+          }
+          
+          // Update translations
+          updateLanguage();
+        } catch (e) {
+          console.error("Error in updateScenariosList:", e);
+        }
+      }
+      
+      // Load a saved scenario
+      function loadScenario(scenarioName) {
+        const scenarios = safeJSONParse(localStorage.getItem('retireCalcScenarios') || '{}') || {};
+        
+        if (!scenarios[scenarioName]) {
+          showNotification('error', `Scenario "${scenarioName}" not found`);
+          return;
+        }
+        
+        // Load the scenario
+        loadParametersFromObject(scenarios[scenarioName].params);
+        updateSimulation();
+        
+        showNotification('success', `Scenario "${scenarioName}" loaded`);
+      }
+      
+      // Delete a saved scenario
+      function deleteScenario(scenarioName) {
+        if (!confirm(`Are you sure you want to delete the scenario "${scenarioName}"?`)) {
+          return;
+        }
+        
+        const scenarios = safeJSONParse(localStorage.getItem('retireCalcScenarios') || '{}') || {};
+        
+        if (!scenarios[scenarioName]) {
+          showNotification('error', `Scenario "${scenarioName}" not found`);
+          return;
+        }
+        
+        // Delete the scenario
+        delete scenarios[scenarioName];
+        localStorage.setItem('retireCalcScenarios', JSON.stringify(scenarios));
+        
+        // Update list
+        updateScenariosList();
+        
+        showNotification('success', `Scenario "${scenarioName}" deleted`);
+      }
+      
+      // Show scenario comparison modal
+      function showScenarioComparison() {
+        const scenarios = safeJSONParse(localStorage.getItem('retireCalcScenarios') || '{}') || {};
+        const scenarioNames = Object.keys(scenarios);
+        
+        if (scenarioNames.length < 2) {
+          showNotification('warning', 'Need at least two scenarios to compare');
+          return;
+        }
+        
+        // Show loading notification
+        showNotification('info', 'Running comparison simulations...');
+        
+        // Create comparison results (need to run simulations for each scenario)
+        let comparisonData = [];
+        let processedCount = 0;
+        
+        // Process each scenario sequentially
+        function processNextScenario(index) {
+          if (index >= scenarioNames.length) {
+            // All scenarios processed, show comparison modal
+            showComparisonModal(comparisonData);
+            return;
+          }
+          
+          const name = scenarioNames[index];
+          const params = scenarios[name].params;
+          
+          // Create a worker for this scenario
+          const worker = new Worker(workerBlobURL);
+          
+          worker.onmessage = function(e) {
+            const results = e.data;
+            
+            // Calculate key metrics
+            const finalMedianAssets = results.assetPercentiles.median[results.ages.length - 1];
+            const finalP10Assets = results.assetPercentiles.p10[results.ages.length - 1];
+            
+            comparisonData.push({
+              name: name,
+              retirementAge: params.intendedRetirementAge,
+              successRate: results.successProbability * 100,
+              finalMedianAssets: finalMedianAssets,
+              finalP10Assets: finalP10Assets
+            });
+            
+            processedCount++;
+            
+            // Process next scenario
+            worker.terminate();
+            processNextScenario(index + 1);
+          };
+          
+          // Send parameters to worker
+          worker.postMessage(params);
+        }
+        
+        // Start processing scenarios
+        processNextScenario(0);
+      }
+      
+      // Show comparison modal with data
+      function showComparisonModal(comparisonData) {
+        // Sort data by success rate (descending)
+        comparisonData.sort((a, b) => b.successRate - a.successRate);
+        
+        // Create modal HTML
+        const modalHtml = `
+          <div class="modal fade" id="scenarioComparisonModal" tabindex="-1" role="dialog" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Scenario Comparison</h5>
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </div>
+                <div class="modal-body">
+                  <table class="table table-striped">
+                    <thead>
+                      <tr>
+                        <th>Scenario</th>
+                        <th>Retirement Age</th>
+                        <th>Success Rate</th>
+                        <th>Final Assets (Median)</th>
+                        <th>Final Assets (10%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${comparisonData.map(data => `
+                        <tr>
+                          <td>${data.name}</td>
+                          <td>${data.retirementAge}</td>
+                          <td>${data.successRate.toFixed(1)}%</td>
+                          <td>€${Math.round(data.finalMedianAssets).toLocaleString()}</td>
+                          <td>€${Math.round(data.finalP10Assets).toLocaleString()}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                  <div id="comparisonChart" style="height: 300px;"></div>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        // Add modal to document
+        const modalContainer = document.createElement('div');
+        modalContainer.innerHTML = modalHtml;
+        document.body.appendChild(modalContainer.firstChild);
+        
+        // Initialize and show modal
+        $('#scenarioComparisonModal').modal('show');
+        
+        // Create comparison chart
+        setTimeout(() => {
+          const ctx = document.getElementById('comparisonChart').getContext('2d');
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: comparisonData.map(d => d.name),
+              datasets: [
+                {
+                  label: 'Success Rate (%)',
+                  data: comparisonData.map(d => d.successRate),
+                  backgroundColor: accessibleColors[0] + '80'
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                yAxes: [{
+                  ticks: {
+                    beginAtZero: true,
+                    max: 100
+                  }
+                }]
+              }
+            }
+          });
+        }, 300);
+        
+        // Clean up when modal is closed
+        $('#scenarioComparisonModal').on('hidden.bs.modal', function() {
+          $(this).remove();
+        });
+      }
+      
+      // Improve modal accessibility
+      function improveModalAccessibility() {
+        // Store last focused element to return focus when modal closes
+        let lastFocusedElement;
+        
+        $(document).on('show.bs.modal', '.modal', function() {
+          lastFocusedElement = document.activeElement;
+          
+          // Set initial focus to first focusable element in modal
+          setTimeout(() => {
+            const focusable = $(this).find('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])').filter(':visible').first();
+            focusable.focus();
+          }, 300);
+        });
+        
+        $(document).on('hidden.bs.modal', '.modal', function() {
+          // Return focus to element that had focus before modal was opened
+          if (lastFocusedElement) {
+            lastFocusedElement.focus();
+          }
+        });
+        
+        // Trap focus within modal
+        $(document).on('keydown', '.modal.show', function(e) {
+          if (e.key === 'Tab') {
+            const focusableElements = $(this).find('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])').filter(':visible');
+            const firstElement = focusableElements.first()[0];
+            const lastElement = focusableElements.last()[0];
+            
+            // Shift + Tab on first element should move to last element
+            if (e.shiftKey && document.activeElement === firstElement) {
+              e.preventDefault();
+              lastElement.focus();
+            }
+            // Tab on last element should move to first element
+            else if (!e.shiftKey && document.activeElement === lastElement) {
+              e.preventDefault();
+              firstElement.focus();
+            }
+          }
+          
+          // Close modal on Escape key
+          if (e.key === 'Escape') {
+            $(this).modal('hide');
+          }
+        });
+      }
+      
+      // Public methods
+      return {
+        init: function() {
+          this.bindEventListeners();
+          this.loadInitialParameters();
+          initDarkMode();
+          updateLanguage();
+          updateScenariosList();
+          updateSimulation();
+          improveModalAccessibility();
+        },
+        
+        bindEventListeners: function() {
+          // Language change
+          document.getElementById("languageSelect").addEventListener("change", function() {
+            currentLanguage = this.value;
+            updateLanguage();
+            updateSimulation();
+          });
+          
+          // Parameters change - excluding scenario name input
+          document.querySelectorAll("input:not(#scenarioName)").forEach(el => {
+            el.addEventListener("input", debouncedUpdateSimulation);
+          });
+          
+          // Save/load parameters
+          document.getElementById("saveParamsBtn").addEventListener("click", saveParameters);
+          document.getElementById("loadParamsBtn").addEventListener("click", loadSavedParameters);
+          document.getElementById("exportPdfBtn").addEventListener("click", exportPdf);
+          
+          // Scenario management
+          document.getElementById("saveScenarioBtn").addEventListener("click", saveScenario);
+          
+          // Theme toggle
+          document.getElementById("themeToggle").addEventListener("click", toggleDarkMode);
+        },
+        
+        loadInitialParameters: function() {
+          let stored = localStorage.getItem("savedParameters");
+          if (stored) {
+            try {
+              loadParametersFromObject(safeJSONParse(stored));
+            } catch(e) {
+              console.error("Error loading stored parameters:", e);
+            }
+          }
+        },
+        
+        // Expose key functions
+        updateLanguage,
+        updateSimulation,
+        debouncedUpdateSimulation,
+        getParameters,
+        loadParametersFromObject,
+        saveParameters,
+        loadSavedParameters,
+        updateScenariosList
+      };
+    })();
+
+    // Initialize on window load
+    window.addEventListener('DOMContentLoaded', function() {
+      RetirementApp.init();
+    });
+  </script>
+</body>
+</html>
