@@ -9,9 +9,10 @@ import os
 from datetime import datetime
 import locale
 import pickle
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
+from reportlab.lib import colors
 from io import BytesIO
 
 # Set locale for number formatting
@@ -22,8 +23,8 @@ class RetirementCalculator:
     def __init__(self, root):
         self.root = root
         self.root.title("Early Retirement Monte Carlo Simulation")
-        self.root.geometry("1200x800")
-        self.root.minsize(1000, 700)
+        self.root.geometry("1200x900")
+        self.root.minsize(1100, 800)
         
         # Set up theme and style
         self.style = ttk.Style()
@@ -119,7 +120,8 @@ class RetirementCalculator:
                 "menu_tools_settings": "Settings",
                 "menu_tools_darkMode": "Toggle Dark Mode",
                 "menu_help_about": "About",
-                "explanation_simulation": "The simulation has two phases. In the accumulation phase (from your current age until your intended retirement), your assets grow with savings and investment returns. In the distribution phase (from retirement until age 90), your assets cover your living expenses—which increase with inflation—until your pension begins at the legal retirement age. The success probability shows the percentage of simulations in which your assets never drop below zero."
+                "explanation_simulation": "The simulation has two phases. In the accumulation phase (from your current age until your intended retirement), your assets grow with savings and investment returns. In the distribution phase (from retirement until age 90), your assets cover your living expenses—which increase with inflation—until your pension begins at the legal retirement age. The success probability shows the percentage of simulations in which your assets never drop below zero.",
+                "btn_exportPdf": "Export PDF",
             },
             "de": {
                 "title_main": "Monte-Carlo-Simulation für Frühverrentung",
@@ -200,7 +202,8 @@ class RetirementCalculator:
                 "menu_tools_settings": "Einstellungen",
                 "menu_tools_darkMode": "Dunkelmodus umschalten",
                 "menu_help_about": "Über",
-                "explanation_simulation": "Die Simulation modelliert zwei Phasen. In der Ansparphase (von Ihrem aktuellen Alter bis zum geplanten Rentenalter) wachsen Ihre Vermögenswerte durch Ersparnisse und Renditen. In der Auszahlungsphase (vom Rentenbeginn bis zum Alter 90) decken Ihre Vermögenswerte Ihre Lebenshaltungskosten – die durch Inflation steigen – bis Ihre Rente einsetzt. Die Erfolgswahrscheinlichkeit gibt den Prozentsatz der Simulationen an, bei denen Ihre Vermögenswerte nie unter null fallen."
+                "explanation_simulation": "Die Simulation modelliert zwei Phasen. In der Ansparphase (von Ihrem aktuellen Alter bis zum geplanten Rentenalter) wachsen Ihre Vermögenswerte durch Ersparnisse und Renditen. In der Auszahlungsphase (vom Rentenbeginn bis zum Alter 90) decken Ihre Vermögenswerte Ihre Lebenshaltungskosten – die durch Inflation steigen – bis Ihre Rente einsetzt. Die Erfolgswahrscheinlichkeit gibt den Prozentsatz der Simulationen an, bei denen Ihre Vermögenswerte nie unter null fallen.",
+                "btn_exportPdf": "PDF exportieren",
             }
         }
         
@@ -213,7 +216,7 @@ class RetirementCalculator:
             "capitalGainsTaxRate": 26.25 / 100,
             "annualSavings": 18000,
             "intendedRetirementAge": 60,
-            "averageROI": 12 / 100,
+            "averageROI": 8 / 100,
             "averageInflation": 2.5 / 100,
             "ROI_volatility": 0.15,
             "inflation_volatility": 0.01,
@@ -229,8 +232,8 @@ class RetirementCalculator:
                 "repairs": 3000,
                 "carMaintenance": 3000
             },
-            "simulationRuns": 5000,
-            "simulationEndAge": 90
+            "simulationRuns": 10000,
+            "simulationEndAge": 100
         }
         
         # Initialize UI
@@ -546,6 +549,14 @@ class RetirementCalculator:
         
         # Bind parameter changes to validate and update
         self.bind_parameter_changes()
+        
+        # Add export to PDF button
+        self.export_pdf_button = ttk.Button(
+            self.params_scrollable_frame,  # Use whatever frame your other buttons are in
+            text=self.get_text("btn_exportPdf"),
+            command=self.export_to_pdf
+        )
+        self.export_pdf_button.grid(row=row, column=2, sticky="w", padx=5, pady=2)
         
     def create_summary_ui(self):
         """Create the summary cards"""
@@ -1463,82 +1474,94 @@ class RetirementCalculator:
     
     def export_to_pdf(self):
         """Export the simulation results and parameters to a PDF file"""
-        if self.simulation_results is None:
+        if not hasattr(self, 'simulation_results') or self.simulation_results is None:
             messagebox.showinfo("No Results", "Please run a simulation first.")
             return
         
         # Create a filename with the current date
         now = datetime.now()
-        default_filename = f"retirement_simulation_{now.strftime('%Y-%m-%d')}.pdf"
+        filename = f"retirement_simulation_{now.strftime('%Y-%m-%d')}.pdf"
+        filepath = os.path.join(os.path.dirname(__file__), filename)
         
-        # Ask user for save location
-        filepath = filedialog.asksaveasfilename(
-            defaultextension=".pdf",
-            filetypes=[("PDF files", "*.pdf")],
-            initialfile=default_filename
-        )
-        
-        if not filepath:
-            return  # User canceled
-        
-        # Create PDF document
-        doc = SimpleDocTemplate(filepath, pagesize=A4)
-        story = []
-        styles = getSampleStyleSheet()
-        
-        # Add title
-        title = Paragraph("Retirement Simulation Results", styles["Title"])
-        story.append(title)
-        story.append(Spacer(1, 20))
-        
-        # Add date
-        date_str = f"Generated on: {now.strftime('%Y-%m-%d %H:%M')}"
-        story.append(Paragraph(date_str, styles["Normal"]))
-        story.append(Spacer(1, 20))
-        
-        # Add parameters section
-        story.append(Paragraph("Parameters:", styles["Heading2"]))
-        
-        # Format parameters
-        param_text = [
-            f"Current Age: {self.current_params['currentAge']}",
-            f"Legal Retirement Age: {self.current_params['legalRetirementAge']}",
-            f"Intended Retirement Age: {self.current_params['intendedRetirementAge']}",
-            f"Current Assets: {locale.currency(self.current_params['currentAssets'], grouping=True)}",
-            f"Average ROI: {self.current_params['averageROI']*100:.1f}%",
-            f"Average Inflation: {self.current_params['averageInflation']*100:.1f}%"
-        ]
-        
-        for param in param_text:
-            story.append(Paragraph(param, styles["Normal"]))
-        
-        story.append(Spacer(1, 20))
-        
-        # Add simulation results
-        story.append(Paragraph("Simulation Results:", styles["Heading2"]))
-        
-        # Add success rate
-        success_rate = self.simulation_results.get("success_rate", 0) * 100
-        story.append(Paragraph(f"Success Probability: {success_rate:.1f}%", styles["Normal"]))
-        
-        # Add chart image if available
-        if self.chart:
-            # Save figure to a BytesIO object
+        try:
+            # Create PDF document
+            doc = SimpleDocTemplate(filepath, pagesize=A4, rightMargin=20, leftMargin=20, topMargin=20, bottomMargin=20)
+            story = []
+            styles = getSampleStyleSheet()
+            
+            # Add title
+            title = Paragraph("Retirement Simulation Results", styles["Title"])
+            story.append(title)
+            story.append(Spacer(1, 20))
+            
+            # Add date
+            date_str = f"Generated on: {now.strftime('%Y-%m-%d %H:%M')}"
+            story.append(Paragraph(date_str, styles["Normal"]))
+            story.append(Spacer(1, 20))
+            
+            # Add parameters section
+            story.append(Paragraph("Parameters:", styles["Heading2"]))
+            story.append(Spacer(1, 10))
+            
+            # Format parameters - use the correct variable names from your class
+            params = [
+                f"Current Age: {self.current_age_var.get()}",
+                f"Legal Retirement Age: {self.legal_retirement_age_var.get()}",
+                f"Intended Retirement Age: {self.retirement_age_var.get()}",
+                f"Current Assets: {self.current_assets_var.get()}",
+                f"Monthly Pension: {self.monthly_pension_var.get()}",
+                f"Average ROI: {self.avg_roi_var.get()}%",
+                f"Average Inflation: {self.avg_inflation_var.get()}%",
+                f"Simulation Runs: {self.simulation_runs_var.get()}"
+            ]
+            
+            for param in params:
+                story.append(Paragraph(param, styles["Normal"]))
+            
+            story.append(Spacer(1, 20))
+            
+            # Add detailed simulation results
+            story.append(Paragraph("Simulation Results:", styles["Heading2"]))
+            story.append(Spacer(1, 10))
+            
+            # Add success rate
+            success_rate = self.success_rate_var.get()
+            story.append(Paragraph(f"Success Probability: {success_rate}", styles["Normal"]))
+            
+            # Add median assets at legal retirement
+            median_assets = self.median_assets_var.get()
+            story.append(Paragraph(f"Median Assets at Legal Retirement: {median_assets}", styles["Normal"]))
+            
+            # Add worst case scenario
+            worst_case = self.worst_case_var.get()
+            story.append(Paragraph(f"10th Percentile Assets: {worst_case}", styles["Normal"]))
+            
+            story.append(Spacer(1, 20))
+            
+            # Capture the chart from the UI
             img_data = BytesIO()
-            self.chart.figure.savefig(img_data, format='png', dpi=100, bbox_inches='tight')
+            self.figure.savefig(img_data, format='png', dpi=150, bbox_inches='tight')
             img_data.seek(0)
             
             # Create an Image object with the saved figure
-            img = Image(img_data, width=400, height=300)
+            img = Image(img_data, width=500, height=300)
             story.append(img)
+            
+            # Build PDF document
+            doc.build(story)
+            
+            self.status_var.set(f"PDF exported to {filepath}")
+            messagebox.showinfo("Export Complete", f"Results exported to:\n{filepath}")
         
-        # Build PDF document
-        doc.build(story)
-        
-        messagebox.showinfo("PDF Exported", f"Results exported to:\n{filepath}")
+        except Exception as e:
+            # Add error handling to diagnose issues
+            import traceback
+            error_details = traceback.format_exc()
+            messagebox.showerror("Error Creating PDF", f"Error: {str(e)}\n\nDetails:\n{error_details}")
+            print(f"Error creating PDF: {str(e)}")
+            print(error_details)
     
     def toggle_dark_mode(self):
-        """Toggle dark mode"""
         if self.dark_mode:
             # Switch to light mode
             self.style.theme_use('clam')
@@ -1598,7 +1621,10 @@ class RetirementCalculator:
             else:
                 self.worst_case_label.configure(foreground="white")
         
-        # Update chart
+        # Clear the axes before redrawing to prevent doubling
+        self.ax.clear()
+        
+        # Redraw the chart
         self.canvas.draw()
     
     def show_error(self, message):
